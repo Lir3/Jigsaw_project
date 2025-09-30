@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <title>パズル画像アップロード</title>
+</head>
+
+<body>
+    <h1>パズル画像アップロード</h1>
+
+    <form id="uploadForm" method="post" action="/upload-puzzle" enctype="multipart/form-data">
+        <label>タイトル：
+            <input type="text" name="title" required>
+        </label><br><br>
+
+        <label>難易度：
+            <input type="number" name="difficulty" min="1" max="5" value="1">
+        </label><br><br>
+
+        <label>画像ファイル：
+            <input type="file" name="file" accept="image/*" required>
+        </label><br><br>
+
+        <button type="submit">アップロード</button>
+    </form>
+
+    <div id="preview"></div>
+
+    <script>
+        // フォーム送信後にプレビューを表示する
+        const form = document.getElementById("uploadForm");
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+
+            try {
+                const res = await fetch("/upload-puzzle", {
+                    method: "POST",
+                    body: formData
+                });
+                const data = await res.json();
+
+                if (data.url) {
+                    alert("アップロード成功！");
+                    const previewDiv = document.getElementById("preview");
+                    previewDiv.innerHTML = `<p>アップロード画像プレビュー:</p><img src="${data.url}" width="300">`;
+                } else {
+                    alert("アップロード失敗:\n" + JSON.stringify(data));
+                }
+            } catch (err) {
+                alert("通信エラー:\n" + err);
+            }
+        });
+    </script>
+</body>
+
+</html>

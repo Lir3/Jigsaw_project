@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <title>ジグソーパズル</title>
+    <script>
+        async function loadPuzzles() {
+            const res = await fetch("http://localhost:8000/puzzles");
+            const puzzles = await res.json();
+            console.log(puzzles);
+        }
+        window.onload = loadPuzzles;
+    </script>
+</head>
+
+<body>
+    <h1>ジグソーパズル</h1>
+    <div id="puzzle-list"></div>
+</body>
+
+</html>
