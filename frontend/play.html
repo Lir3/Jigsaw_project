@@ -21,6 +21,13 @@
 
 <body>
     <h1 style="text-align:center;">シングルジグソーパズル</h1>
+
+    <!-- 完成図を表示 -->
+    <div style="text-align:center;">
+        <p>完成図</p>
+        <img id="completedImage" width="200" style="border:1px solid #000;">
+    </div>
+
     <canvas id="puzzleCanvas" width="600" height="600"></canvas>
     <div id="message"></div>
 
@@ -38,6 +45,11 @@
         // パズル初期化
         function initPuzzle(imageUrl, difficulty) {
             image.src = imageUrl;
+
+            // 完成図をセット
+            const completedImg = document.getElementById("completedImage");
+            completedImg.src = imageUrl;
+
 
             // 難易度に応じて分割数
             if (difficulty == 1) { rows = cols = 3; }

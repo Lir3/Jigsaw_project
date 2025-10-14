@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <title>ユーザー登録</title>
+</head>
+
+<body>
+    <h1>ユーザー登録</h1>
+    <form id="signupForm">
+        <label>ユーザー名: <input type="text" name="username" required></label><br><br>
+        <label>パスワード: <input type="password" name="password" required></label><br><br>
+        <button type="submit">登録</button>
+    </form>
+    <div id="result"></div>
+
+    <script>
+        document.getElementById("signupForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const res = await fetch("http://localhost:8000/user/signup", {
+                method: "POST",
+                body: formData
+            });
+            const data = await res.json();
+            document.getElementById("result").innerText = data.message || data.detail;
+        });
+    </script>
+</body>
+
+</html>

@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
-from routers import puzzle
+from routers import puzzle, user
 
 app = FastAPI()
 
@@ -20,6 +20,7 @@ app.add_middleware(
 
 # ルーター登録
 app.include_router(puzzle.router, prefix="/puzzle")
+app.include_router(user.router, prefix="/user") # 追加
 
 @app.get("/")
 def serve_upload_html():
