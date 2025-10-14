@@ -35,3 +35,18 @@ def serve_play_html():
     if not os.path.exists(path):
         return JSONResponse(content={"error": "play.html が存在しません"}, status_code=404)
     return FileResponse(path)
+
+@app.get("/user/login")
+def serve_login_html():
+    path = os.path.join(frontend_path, "login.html")
+    if not os.path.exists(path):
+        return JSONResponse(content={"error": "login.html が存在しません"}, status_code=404)
+    return FileResponse(path)
+
+@app.get("/user/signup")
+def serve_signup_html():
+    path = os.path.join(frontend_path, "signup.html")
+    if not os.path.exists(path):
+        return JSONResponse(content={"error": "signup.html が存在しません"}, status_code=404)
+    return FileResponse(path)
+
