@@ -4,159 +4,60 @@
 <head>
     <meta charset="UTF-8">
     <title>ジグソーパズル</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        canvas {
-            border: 1px solid #000;
-            display: block;
-            margin: 20px auto;
+        /* ... 既存のスタイル ... */
+
+        /* 👈 中央配置のための追加スタイル */
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* 水平中央揃え */
+            min-height: 100vh;
+            /* 画面全体を高さの基準にする */
+            margin: 0;
+            padding-top: 20px;
+            /* 上部に少し余白 */
         }
 
-        #message {
-            text-align: center;
-            font-size: 20px;
-            color: green;
+        #puzzle-container {
+            /* コンテナの幅をCanvasの幅に合わせる（中央配置のため） */
+            display: inline-block;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            /* 見栄えのための影 */
+        }
+
+        /* 既存のスタイル */
+        #shuffle {
+            width: 100px;
+            margin-left: 20px;
+        }
+
+        #how-to-play {
+            margin-left: 20px;
+        }
+
+        #time {
+            margin-left: 20px;
+            font-weight: bold;
         }
     </style>
 </head>
 
 <body>
-    <h1 style="text-align:center;">シングルジグソーパズル</h1>
 
-    <!-- 完成図を表示 -->
-    <div style="text-align:center;">
-        <p>完成図</p>
-        <img id="completedImage" width="200" style="border:1px solid #000;">
+    <p>
+        <button id="shuffle" onclick="shuffle()">シャッフル</button>
+        <span id="time"></span>
+    </p>
+    <p id="how-to-play">各ピースはドラッグ＆ドロップで移動できます。</p>
+
+    <div id="puzzle-container">
+        <canvas id="can"></canvas>
     </div>
 
-    <canvas id="puzzleCanvas" width="600" height="600"></canvas>
-    <div id="message"></div>
-
-    <script>
-        const canvas = document.getElementById("puzzleCanvas");
-        const ctx = canvas.getContext("2d");
-
-        let pieces = []; // ピース情報
-        let pieceSize;   // ピースの幅・高さ
-        let rows, cols;  // 分割数
-        let image = new Image();
-        let draggingPiece = null;
-        let offsetX, offsetY;
-
-        // パズル初期化
-        function initPuzzle(imageUrl, difficulty) {
-            image.src = imageUrl;
-
-            // 完成図をセット
-            const completedImg = document.getElementById("completedImage");
-            completedImg.src = imageUrl;
-
-
-            // 難易度に応じて分割数
-            if (difficulty == 1) { rows = cols = 3; }
-            else if (difficulty == 2) { rows = cols = 4; }
-            else { rows = cols = 5; }
-
-            pieceSize = canvas.width / cols;
-
-            image.onload = () => {
-                // Canvas を初期化
-                pieces = [];
-                for (let y = 0; y < rows; y++) {
-                    for (let x = 0; x < cols; x++) {
-                        pieces.push({
-                            sx: x * (image.width / cols),
-                            sy: y * (image.height / rows),
-                            x: x * pieceSize,
-                            y: y * pieceSize,
-                            width: pieceSize,
-                            height: pieceSize
-                        });
-                    }
-                }
-                shufflePieces();
-                drawPuzzle();
-            };
-        }
-
-        // ピースをシャッフル
-        function shufflePieces() {
-            pieces.forEach(p => {
-                p.x = Math.random() * (canvas.width - pieceSize);
-                p.y = Math.random() * (canvas.height - pieceSize);
-            });
-        }
-
-        // 描画
-        function drawPuzzle() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            pieces.forEach(p => {
-                ctx.drawImage(
-                    image,
-                    p.sx, p.sy,
-                    image.width / cols, image.height / rows,
-                    p.x, p.y,
-                    pieceSize, pieceSize
-                );
-                ctx.strokeRect(p.x, p.y, pieceSize, pieceSize);
-            });
-        }
-
-        // 完成判定
-        function checkComplete() {
-            let complete = pieces.every(p => Math.abs(p.x - p.sx * (canvas.width / image.width)) < 5 &&
-                Math.abs(p.y - p.sy * (canvas.height / image.height)) < 5);
-            if (complete) {
-                document.getElementById("message").innerText = "完成！🎉";
-            }
-        }
-
-        // マウスイベント
-        canvas.addEventListener("mousedown", (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-
-            // 上から順にピースを取得
-            for (let i = pieces.length - 1; i >= 0; i--) {
-                let p = pieces[i];
-                if (mouseX > p.x && mouseX < p.x + pieceSize &&
-                    mouseY > p.y && mouseY < p.y + pieceSize) {
-                    draggingPiece = p;
-                    offsetX = mouseX - p.x;
-                    offsetY = mouseY - p.y;
-                    break;
-                }
-            }
-        });
-
-        canvas.addEventListener("mousemove", (e) => {
-            if (draggingPiece) {
-                const rect = canvas.getBoundingClientRect();
-                draggingPiece.x = e.clientX - rect.left - offsetX;
-                draggingPiece.y = e.clientY - rect.top - offsetY;
-                drawPuzzle();
-            }
-        });
-
-        canvas.addEventListener("mouseup", (e) => {
-            if (draggingPiece) {
-                // ドラッグ終了後に近くの位置にスナップ
-                draggingPiece.x = Math.round(draggingPiece.x / pieceSize) * pieceSize;
-                draggingPiece.y = Math.round(draggingPiece.y / pieceSize) * pieceSize;
-                draggingPiece = null;
-                drawPuzzle();
-                checkComplete();
-            }
-        });
-
-        // URL パラメータから画像と難易度取得
-        window.onload = () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const imageUrl = urlParams.get("image_url");
-            const difficulty = parseInt(urlParams.get("difficulty")) || 1;
-            initPuzzle(imageUrl, difficulty);
-        };
-    </script>
+    <script src="/static/js/play.js"></script>
 </body>
 
 </html>

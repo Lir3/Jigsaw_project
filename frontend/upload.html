@@ -3,54 +3,94 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>ジグソーパズル画像アップロード</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>ジグソーパズルアップロード</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #can {
+            border: 1px solid #000;
+            margin-top: 20px;
+        }
+
+        #controls {
+            margin-top: 20px;
+        }
+
+        #time {
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        button {
+            padding: 5px 10px;
+            margin: 0 5px;
+            font-size: 16px;
+        }
+    </style>
 </head>
 
 <body>
-    <h1>ジグソーパズル用画像アップロード</h1>
+    <h1>ジグソーパズル</h1>
 
-    <form id="uploadForm" enctype="multipart/form-data">
-        <label>タイトル: <input type="text" name="title" required></label><br><br>
-        <label>難易度:
-            <select name="difficulty">
-                <option value="1">簡単</option>
-                <option value="2">普通</option>
-                <option value="3">難しい</option>
-            </select>
-        </label><br><br>
-        <input type="file" name="file" accept="image/*" required><br><br>
-        <button type="submit">アップロード</button>
-    </form>
+    <div id="controls">
+        <label for="imageInput">画像を選択：</label>
+        <input type="file" id="imageInput" accept="image/*"><br><br>
 
-    <div id="result"></div>
+        <label for="difficulty">難易度：</label>
+        <select id="difficulty">
+            <option value="easy">簡単（4×4）</option>
+            <option value="normal" selected>普通（6×6）</option>
+            <option value="hard">難しい（8×8）</option>
+        </select><br><br>
+
+        <button id="startBtn">パズル開始</button>
+        <button id="resetBtn">リセット</button>
+        <button id="hintBtn">ヒント</button>
+        <span id="time" style="display:inline">0 秒</span>
+    </div>
+
+    <canvas id="can"></canvas>
 
     <script>
-        const form = document.getElementById("uploadForm");
-        form.addEventListener("submit", async (e) => {
-            e.preventDefault();
+        const input = document.getElementById('imageInput');
+        const startBtn = document.getElementById('startBtn');
+        let uploadedImageBase64 = null;
 
-            const formData = new FormData(form);
+        // 画像選択
+        input.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                uploadedImageBase64 = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
 
-            try {
-                const response = await fetch("/puzzle/upload-puzzle", {
-                    method: "POST",
-                    body: formData
-                });
-
-                const data = await response.json();
-
-                if (data.url) {
-                    const difficulty = data.difficulty;
-                    window.location.href = `/play?image_url=${encodeURIComponent(data.url)}&difficulty=${difficulty}`;
-                } else {
-                    document.getElementById("result").innerText = "アップロード失敗: " + JSON.stringify(data);
-                }
-
-            } catch (err) {
-                document.getElementById("result").innerText = "エラー: " + err;
+        // パズル開始
+        startBtn.addEventListener('click', () => {
+            if (!uploadedImageBase64) {
+                alert("画像を選択してください。");
+                return;
             }
+            localStorage.setItem('uploadedImage', uploadedImageBase64);
+
+            // 選択した難易度も保存
+            const difficulty = document.getElementById('difficulty').value;
+            localStorage.setItem('puzzleDifficulty', difficulty);
+
+            // ページリロードして play.js で読み込み
+            window.location.reload();
         });
     </script>
+
+    <!-- play.js を読み込み -->
+    <script src="static/js/play.js"></script>
 </body>
 
 </html>
