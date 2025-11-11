@@ -1,50 +1,56 @@
-/* 背景・レイアウト */
+/* --- レイアウトと中央寄せ --- */
 body {
-  font-family: 'Segoe UI', sans-serif;
-  background: linear-gradient(135deg, #89f7fe, #66a6ff);
   margin: 0;
-  height: 100vh;
+  font-family: Arial, sans-serif;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+  height: 100vh;
+
+  background-color: #e0f7fa;
+  background-image: repeating-linear-gradient(
+    45deg,
+    #b2ebf2,
+    #b2ebf2 20px,
+    #80deea 20px,
+    #80deea 40px
+  );
 }
 
-/* コンテナ */
+
+/* --- コンテナ --- */
 .container {
   text-align: center;
-  background: white;
-  padding: 50px 70px;
-  border-radius: 20px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.9); /* 半透明で少し浮かせる */
+  padding: 60px 80px;
+  border-radius: 25px;
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
 }
 
-/* タイトル */
+/* --- タイトル --- */
 .title {
-  font-size: 2.5rem;
+  font-size: 3rem;
   color: #333;
-  margin-bottom: 40px;
+  margin-bottom: 50px;
+  font-family: 'Comic Sans MS', cursive, sans-serif;
 }
 
-/* ボタン配置 */
-.button-container {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-/* ボタンデザイン */
-button {
+/* --- ボタン --- */
+.button-container button {
+  padding: 15px 30px;
+  margin: 15px;
   font-size: 1.2rem;
-  padding: 12px 25px;
-  border: none;
-  border-radius: 10px;
   cursor: pointer;
-  transition: 0.3s;
-  background-color: #66a6ff;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 6px 10px rgba(0,0,0,0.2);
+  background-color: #ffb347;
   color: white;
+  transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
 }
 
-button:hover {
-  background-color: #4e8ef5;
-  transform: translateY(-3px);
+.button-container button:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 12px rgba(0,0,0,0.3);
+  background-color: #ff7e5f;
 }
