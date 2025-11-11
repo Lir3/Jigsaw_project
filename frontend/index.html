@@ -1,22 +1,36 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
-    <meta charset="UTF-8">
-    <title>ジグソーパズル</title>
-    <script>
-        async function loadPuzzles() {
-            const res = await fetch("http://localhost:8000/puzzles");
-            const puzzles = await res.json();
-            console.log(puzzles);
-        }
-        window.onload = loadPuzzles;
-    </script>
+  <meta charset="UTF-8">
+  <title>ジグソーパズル</title>
+  <link rel="stylesheet" href="/static/css/index.css">
 </head>
-
 <body>
-    <h1>ジグソーパズル</h1>
-    <div id="puzzle-list"></div>
-</body>
+  <div class="container">
+    <h1 class="title">ジグソーパズル</h1>
 
+    <div class="button-container">
+      <button id="login-btn">ログイン</button>
+      <button id="signup-btn">ユーザー登録</button>
+      <button id="guest-btn">ゲストプレイ</button>
+    </div>
+  </div>
+
+  <script>
+    // ボタン動作
+   document.getElementById('login-btn').onclick = () => {
+  window.location.href = '/user/login'; // FastAPI のログイン画面
+};
+
+document.getElementById('signup-btn').onclick = () => {
+  window.location.href = '/user/signup'; // FastAPI の新規登録画面
+};
+
+document.getElementById('guest-btn').onclick = () => {
+  window.location.href = '/upload'; // ゲストは直接パズルプレイ画面へ
+};
+
+  </script>
+</body>
 </html>
+
