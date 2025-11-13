@@ -1,45 +1,77 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
-    <meta charset="UTF-8">
-    <title>ログイン</title>
+  <meta charset="UTF-8">
+  <title>ログイン</title>
+  <link rel="stylesheet" href="/static/css/login.css">
 </head>
 
 <body>
-    <h1>ログイン</h1>
-    <!-- actionとmethodを削除 -->
+  <div class="container">
+    <h1 class="title">ログイン</h1>
+
     <form id="loginForm">
-        <label>ユーザー名: <input type="text" name="username" required></label><br><br>
-        <label>パスワード: <input type="password" name="password" required></label><br><br>
+      <div class="input-group">
+        <label>ユーザー名</label>
+        <input type="text" name="username" required>
+      </div>
+
+      <div class="input-group">
+        <label>パスワード</label>
+        <div class="password-wrapper">
+          <input type="password" id="password" name="password" required>
+          <span id="togglePassword" class="eye-icon">👁</span>
+        </div>
+      </div>
+
+      <div class="button-container">
         <button type="submit">ログイン</button>
+        <button type="button" id="backBtn">戻る</button>
+      </div>
     </form>
+
     <div id="result"></div>
+  </div>
 
-    <script>
-        document.getElementById("loginForm").addEventListener("submit", async (e) => {
-            e.preventDefault(); // ここでブラウザの標準送信を停止
-            const formData = new FormData(e.target);
+  <script>
+    // --- ログイン処理 ---
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
 
-            try {
-                const res = await fetch("http://127.0.0.1:8000/user/login", {
-                    method: "POST",
-                    body: formData
-                });
-                const data = await res.json();
-
-                if (res.ok) {
-                    localStorage.setItem("user_id", data.user_id);
-                    localStorage.setItem("username", data.username);
-                    document.getElementById("result").innerText = "ログイン成功";
-                } else {
-                    document.getElementById("result").innerText = data.detail;
-                }
-            } catch (err) {
-                document.getElementById("result").innerText = "通信エラー: " + err;
-            }
+      try {
+        const res = await fetch("http://127.0.0.1:8000/user/login", {
+          method: "POST",
+          body: formData
         });
-    </script>
-</body>
+        const data = await res.json();
 
+        if (res.ok) {
+          localStorage.setItem("user_id", data.user_id);
+          localStorage.setItem("username", data.username);
+          document.getElementById("result").innerText = "ログイン成功";
+        } else {
+          document.getElementById("result").innerText = data.detail;
+        }
+      } catch (err) {
+        document.getElementById("result").innerText = "通信エラー: " + err;
+      }
+    });
+
+    // --- パスワードの表示/非表示切り替え ---
+    const toggleBtn = document.getElementById("togglePassword");
+    const passwordField = document.getElementById("password");
+
+    toggleBtn.addEventListener("click", () => {
+      const isHidden = passwordField.type === "password";
+      passwordField.type = isHidden ? "text" : "password";
+      toggleBtn.textContent = isHidden ? "🙈" : "👁";
+    });
+
+    // --- 戻るボタン ---
+    document.getElementById("backBtn").addEventListener("click", () => {
+      window.location.href = "/"; // 遷移先を変更可能
+    });
+  </script>
+</body>
 </html>

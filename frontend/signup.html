@@ -1,32 +1,70 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
-    <meta charset="UTF-8">
-    <title>ユーザー登録</title>
+  <meta charset="UTF-8">
+  <title>ユーザー登録</title>
+  <link rel="stylesheet" href="/static/css/signup.css">
 </head>
 
 <body>
-    <h1>ユーザー登録</h1>
+  <div class="container">
+    <h1 class="title">ユーザー登録</h1>
+
     <form id="signupForm">
-        <label>ユーザー名: <input type="text" name="username" required></label><br><br>
-        <label>パスワード: <input type="password" name="password" required></label><br><br>
+      <div class="input-group">
+        <label>ユーザー名</label>
+        <input type="text" name="username" required>
+      </div>
+
+      <div class="input-group">
+        <label>パスワード</label>
+        <div class="password-wrapper">
+          <input type="password" id="password" name="password" required>
+          <span id="togglePassword" class="eye-icon">👁</span>
+        </div>
+      </div>
+
+      <div class="button-container">
         <button type="submit">登録</button>
+        <button type="button" id="backBtn">戻る</button>
+      </div>
     </form>
+
     <div id="result"></div>
+  </div>
 
-    <script>
-        document.getElementById("signupForm").addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const res = await fetch("http://127.0.0.1:8000/user/signup", {
-                method: "POST",
-                body: formData
-            });
-            const data = await res.json();
-            document.getElementById("result").innerText = data.message || data.detail;
+  <script>
+    // --- ユーザー登録処理 ---
+    document.getElementById("signupForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+
+      try {
+        const res = await fetch("http://127.0.0.1:8000/user/signup", {
+          method: "POST",
+          body: formData
         });
-    </script>
-</body>
+        const data = await res.json();
+        document.getElementById("result").innerText = data.message || data.detail || "登録完了";
+      } catch (err) {
+        document.getElementById("result").innerText = "通信エラー: " + err;
+      }
+    });
 
+    // --- パスワードの表示/非表示切り替え ---
+    const toggleBtn = document.getElementById("togglePassword");
+    const passwordField = document.getElementById("password");
+
+    toggleBtn.addEventListener("click", () => {
+      const isHidden = passwordField.type === "password";
+      passwordField.type = isHidden ? "text" : "password";
+      toggleBtn.textContent = isHidden ? "🙈" : "👁";
+    });
+
+    // --- 戻るボタン ---
+    document.getElementById("backBtn").addEventListener("click", () => {
+      window.location.href = "/";
+    });
+  </script>
+</body>
 </html>

@@ -1,0 +1,106 @@
+/* --- 背景 --- */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #e0f7fa;
+  background-image: repeating-linear-gradient(
+    45deg,
+    #b2ebf2,
+    #b2ebf2 20px,
+    #80deea 20px,
+    #80deea 40px
+  );
+}
+
+/* --- コンテナ --- */
+.container {
+  text-align: center;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 60px 80px;
+  border-radius: 25px;
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* --- タイトル --- */
+.title {
+  font-size: 2.5rem;
+  color: #333;
+  margin-bottom: 40px;
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+}
+
+/* --- 入力欄 --- */
+.input-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+input[type="text"],
+input[type="password"] {
+  width: 100%;
+  padding: 12px 40px 12px 12px; /* 👁アイコン分の右余白 */
+  border: 2px solid #ccc;
+  border-radius: 10px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+/* --- パスワード欄（アイコン内蔵タイプ） --- */
+.password-wrapper {
+  position: relative;
+}
+
+.eye-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 1.3rem;
+  user-select: none;
+  color: #888;
+}
+
+.eye-icon:hover {
+  color: #333;
+}
+
+/* --- ボタン --- */
+.button-container {
+  margin-top: 30px;
+}
+
+.button-container button {
+  padding: 12px 25px;
+  margin: 10px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 6px 10px rgba(0,0,0,0.2);
+  background-color: #ffb347;
+  color: white;
+  transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+}
+
+.button-container button:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 12px rgba(0,0,0,0.3);
+  background-color: #ff7e5f;
+}
+
+/* --- 結果メッセージ --- */
+#result {
+  margin-top: 20px;
+  font-weight: bold;
+}
