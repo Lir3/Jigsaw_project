@@ -5,44 +5,7 @@
     <meta charset="UTF-8">
     <title>ジグソーパズル</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        /* ... 既存のスタイル ... */
-
-        /* 👈 中央配置のための追加スタイル */
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            /* 水平中央揃え */
-            min-height: 100vh;
-            /* 画面全体を高さの基準にする */
-            margin: 0;
-            padding-top: 20px;
-            /* 上部に少し余白 */
-        }
-
-        #puzzle-container {
-            /* コンテナの幅をCanvasの幅に合わせる（中央配置のため） */
-            display: inline-block;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            /* 見栄えのための影 */
-        }
-
-        /* 既存のスタイル */
-        #shuffle {
-            width: 100px;
-            margin-left: 20px;
-        }
-
-        #how-to-play {
-            margin-left: 20px;
-        }
-
-        #time {
-            margin-left: 20px;
-            font-weight: bold;
-        }
-    </style>
+    <link rel="stylesheet" href="/static/css/play.css">
 </head>
 
 <body>

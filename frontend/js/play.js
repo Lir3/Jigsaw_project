@@ -1,7 +1,3 @@
-/**
- * play.js — 完全版 + 拡張機能
- */
-
 const can = document.getElementById('can');
 if (!can) console.error("Canvas element with ID 'can' not found.");
 const ctx = can.getContext('2d');

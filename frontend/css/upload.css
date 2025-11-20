@@ -1,0 +1,132 @@
+/* --- 基本レイアウト --- */
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    padding: 20px;
+    margin: 0;
+
+    /* スクロール可能にする */
+    height: auto;
+    overflow-y: auto;
+
+    /* 下地の優しいグラデ（見やすさ重視）*/
+    background: radial-gradient(#f9f9f9 10%, #e6e6e6 11%) 0 0,
+        radial-gradient(#f9f9f9 10%, #e6e6e6 11%) 20px 20px;
+    background-size: 40px 40px;
+    position: relative;
+    /* ::before の基準にする */
+}
+
+/* --- アニメーションするジグソーパズルピース（固定表示） --- */
+/* position: fixed にすることで、ページをスクロールしても常に画面全体を覆い、アニメーションが見えるようにする */
+body::before {
+    content: "";
+    position: fixed;
+    /* ここを fixed に */
+    inset: 0;
+    /* 画面全体に広げる */
+    pointer-events: none;
+    /* 背景なのでマウスイベントを受けない */
+    background-image: url("https://upload.wikimedia.org/wikipedia/commons/6/6b/Jigsaw_Puzzle_Piece_Blue.svg");
+    background-repeat: repeat;
+    background-size: 120px 120px;
+    /* ピースの大きさ */
+    opacity: 0.12;
+    /* 見やすさに応じて調整 */
+    z-index: 0;
+    /* コンテンツより下に配置する（後述の要素で z-index:1 に）*/
+    will-change: background-position;
+    /* パフォーマンスヒント */
+    animation: puzzleDrift 22s linear infinite;
+    /* アニメーション適用 */
+}
+
+/* コンテンツを前面に出す（body::before の z-index が 0 のため） */
+#controls,
+h1,
+#can {
+    position: relative;
+    z-index: 1;
+}
+
+/* パズルピースがはっきり動くように、変化量を大きめに設定 */
+@keyframes puzzleDrift {
+    0% {
+        background-position: 0px 0px;
+    }
+
+    25% {
+        background-position: 200px 80px;
+    }
+
+    50% {
+        background-position: 40px 200px;
+    }
+
+    75% {
+        background-position: -160px 60px;
+    }
+
+    100% {
+        background-position: 0px 0px;
+    }
+}
+
+/* --- その他 UI スタイル（既存の見た目維持＋少し調整） --- */
+h1 {
+    color: #333;
+    text-shadow: 1px 1px 3px #fff;
+}
+
+#controls {
+    margin-top: 20px;
+    background: rgba(255, 255, 255, 0.92);
+    border-radius: 12px;
+    display: inline-block;
+    padding: 14px 22px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    backdrop-filter: blur(4px);
+}
+
+#time {
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+button {
+    padding: 6px 14px;
+    margin: 0 5px;
+    font-size: 16px;
+    background-color: #6ca0dc;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.18s, background-color 0.2s;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    background-color: #588cca;
+}
+
+#can {
+    border: 2px solid #000;
+    border-radius: 10px;
+    margin-top: 20px;
+
+    /* ★背景色を淡いグレーに変更（白ピースが見える） */
+    background: #e9e9e9;
+
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+    position: relative;
+    z-index: 1;
+}
+
+
+/* アニメーションをオフにしたい（ユーザーの環境配慮） */
+@media (prefers-reduced-motion: reduce) {
+    body::before {
+        animation: none;
+    }
+}
