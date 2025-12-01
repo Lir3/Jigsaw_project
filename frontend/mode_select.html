@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>プレイモード選択</title>
+  <link rel="stylesheet" href="/static/css/mode_select.css">
+</head>
+<body>
+
+<div class="container">
+  <h1 class="title">🎮 プレイモード選択</h1>
+
+  <div class="button-container">
+    <button onclick="goSingle()">🧩 シングルプレイ</button>
+    <button onclick="goCreate()">🏠 ルーム作成</button>
+    <button onclick="goJoin()">🔎 ルーム参加</button>
+  </div>
+
+  <div class="logout">
+    <button class="back" onclick="goHome()">← ホームに戻る</button>
+  </div>
+</div>
+
+<script>
+  function goSingle() {
+    window.location.href = "/play";
+  }
+
+  function goCreate() {
+    window.location.href = "/room/create";
+  }
+
+  function goJoin() {
+    window.location.href = "/room/join";
+  }
+
+  function goHome() {
+    window.location.href = "/";
+  }
+</script>
+
+</body>
+</html>

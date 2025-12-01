@@ -65,3 +65,21 @@ def serve_signup_html():
     if not os.path.exists(path):
         return JSONResponse(content={"error": "signup.html が存在しません"}, status_code=404)
     return FileResponse(path)
+
+# ログイン後 モード選択画面
+@app.get("/mode")
+def serve_mode_select():
+    path = os.path.join(frontend_path, "mode_select.html")
+    return FileResponse(path)
+
+# ルーム作成ページ
+@app.get("/room/create")
+def serve_room_create():
+    path = os.path.join(frontend_path, "room_create.html")
+    return FileResponse(path)
+
+# ルーム参加ページ
+@app.get("/room/join")
+def serve_room_join():
+    path = os.path.join(frontend_path, "room_join.html")
+    return FileResponse(path)

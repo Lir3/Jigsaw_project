@@ -47,9 +47,9 @@
         const data = await res.json();
 
         if (res.ok) {
-          localStorage.setItem("user_id", data.user_id);
-          localStorage.setItem("username", data.username);
-          document.getElementById("result").innerText = "ログイン成功";
+           localStorage.setItem("user_id", data.user_id);
+            localStorage.setItem("username", data.username);
+          　window.location.href = "/mode"; // モード選択画面へ
         } else {
           document.getElementById("result").innerText = data.detail;
         }
