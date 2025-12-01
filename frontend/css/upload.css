@@ -130,3 +130,27 @@ button:hover {
         animation: none;
     }
 }
+
+#completedImagePreview {
+    position: fixed;
+    /* 画面左上に固定 */
+    top: 20px;
+    left: 20px;
+    width: 250px;
+    /* サイズ大きめ */
+    height: auto;
+    border: 2px solid #333;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    /* canvasより前面 */
+}
+
+/* 完成図切替ボタン */
+#toggleCompletedBtn {
+    position: fixed;
+    top: 280px;
+    /* 完成図下に配置 */
+    left: 20px;
+    z-index: 1000;
+    padding: 5px 10px;
+}

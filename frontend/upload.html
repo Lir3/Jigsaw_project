@@ -11,7 +11,7 @@
 <body>
     <h1>ジグソーパズル</h1>
 
-    <div id="controls">
+    <div id="controls" style="margin-left:280px;"> <!-- 左に完成図分スペースを確保 -->
         <label for="imageInput">画像を選択：</label>
         <input type="file" id="imageInput" accept="image/*"><br><br>
 
@@ -28,7 +28,12 @@
         <span id="time" style="display:inline">0 秒</span>
     </div>
 
-    <canvas id="can"></canvas>
+    <canvas id="can" style="margin-top:20px; margin-left:280px;"></canvas> <!-- 左に完成図分スペース -->
+
+    <img id="completedImagePreview">
+
+    <button id="toggleCompletedBtn" style="position:fixed; top:280px; left:20px; z-index:1000;">完成図表示/非表示</button>
+
 
     <script>
         const input = document.getElementById('imageInput');

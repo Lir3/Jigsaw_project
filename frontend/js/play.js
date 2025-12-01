@@ -53,6 +53,18 @@ class Piece {
     }
 }
 
+// タイマー開始関数
+function startTimer() {
+    if (timer) clearInterval(timer);
+    time = 0;
+    $time.innerHTML = '0 秒';
+    $time.style.color = '#000';
+    timer = setInterval(() => {
+        time++;
+        $time.innerHTML = `${time} 秒`;
+    }, 1000);
+}
+
 // --- window.onload ---
 window.onload = async () => {
     if (!can) return;
@@ -65,6 +77,7 @@ window.onload = async () => {
 
     // 画像読み込み
     const sourceImage = await createSourceImage();
+
 
     // サイズ調整
     const maxWidth = 480;
@@ -85,6 +98,24 @@ window.onload = async () => {
     can.width = colMax * pieceSize * 2.5;
     can.height = rowMax * pieceSize * 2;
 
+    const completedCanvas = document.createElement('canvas');
+    completedCanvas.width = colMax * pieceSize;
+    completedCanvas.height = rowMax * pieceSize;
+    const cctx = completedCanvas.getContext('2d');
+    cctx.drawImage(sourceImage, 0, 0, completedCanvas.width, completedCanvas.height);
+
+    const completedPreview = document.getElementById('completedImagePreview');
+    completedPreview.src = completedCanvas.toDataURL();
+    completedPreview.style.display = 'block';
+    completedPreview.style.width = '250px';
+    completedPreview.style.height = 'auto';
+
+    // 完成図表示/非表示ボタン
+    const toggleBtn = document.getElementById('toggleCompletedBtn');
+    toggleBtn.addEventListener('click', () => {
+        completedPreview.style.display = completedPreview.style.display === 'none' ? 'block' : 'none';
+    });
+
     // リサイズ済み画像
     const resizedImage = document.createElement('canvas');
     resizedImage.width = colMax * pieceSize;
@@ -103,18 +134,16 @@ window.onload = async () => {
 
     shuffleInitial();
     drawAll();
+    startTimer(); // ←ここでタイマー開始
 
     // リセットボタン
     const resetBtn = document.getElementById('resetBtn');
     if (resetBtn) resetBtn.addEventListener('click', () => {
         shuffleInitial();
         drawAll();
-        time = 0;
-        clearInterval(timer);
-        timer = null;
-        $time.innerHTML = '0 秒';
-        $time.style.color = '#000';
+        startTimer(); // ←リセット時もタイマー再スタート
     });
+
 
     // ヒントボタン
     const hintBtn = document.getElementById('hintBtn');
@@ -268,10 +297,34 @@ window.addEventListener('mousedown', (ev) => {
 window.addEventListener('mousemove', (ev) => {
     if (!movingPiece) return;
     const rect = can.getBoundingClientRect();
+
     movingPiece.X = ev.clientX - rect.left - movingPiece.offsetX;
     movingPiece.Y = ev.clientY - rect.top - movingPiece.offsetY;
+
+    // --- 自動スクロール ---
+    const margin = 100; // 端からの距離でスクロール
+    const scrollSpeed = 20; // スクロール速度
+
+    // 画面下端近く
+    if (ev.clientY > window.innerHeight - margin) {
+        window.scrollBy(0, scrollSpeed);
+    }
+    // 画面上端近く
+    if (ev.clientY < margin) {
+        window.scrollBy(0, -scrollSpeed);
+    }
+    // 画面右端近く
+    if (ev.clientX > window.innerWidth - margin) {
+        window.scrollBy(scrollSpeed, 0);
+    }
+    // 画面左端近く
+    if (ev.clientX < margin) {
+        window.scrollBy(-scrollSpeed, 0);
+    }
+
     drawAll();
 });
+
 
 window.addEventListener('mouseup', (ev) => {
     if (!movingPiece) return;
