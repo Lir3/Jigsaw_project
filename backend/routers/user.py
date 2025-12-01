@@ -9,11 +9,24 @@ router = APIRouter()
 # パスワードハッシュ用（bcryptを使用）
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+
+# ✅ パスワードをハッシュ化
 def get_password_hash(password: str):
+
+    # 🔒 bcryptの72byte制限チェック
+    if len(password.encode("utf-8")) > 72:
+        raise HTTPException(
+            status_code=400,
+            detail="パスワードは72バイト以内で入力してください"
+        )
+
     return pwd_context.hash(password)
 
+
+# ✅ パスワード検証
 def verify_password(plain_password: str, hashed_password: str):
     return pwd_context.verify(plain_password, hashed_password)
+
 
 # ✅ ユーザー登録（サインアップ）
 @router.post("/signup")
@@ -23,6 +36,7 @@ async def signup(username: str = Form(...), password: str = Form(...)):
     if existing.data:
         raise HTTPException(status_code=400, detail="このユーザー名は既に使われています")
 
+    # 🔐 ハッシュ化
     password_hash = get_password_hash(password)
     user_id = str(uuid.uuid4())
 
@@ -33,6 +47,7 @@ async def signup(username: str = Form(...), password: str = Form(...)):
     }).execute()
 
     return {"message": "ユーザー登録成功", "username": username}
+
 
 # ✅ ログイン（サインイン）
 @router.post("/login")
