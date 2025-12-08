@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ルーム作成</title>
+  <link rel="stylesheet" href="/static/css/room.css">
+</head>
+<body>
+
+<div class="container">
+  <h1 class="title">🏠 ルーム作成</h1>
+
+  <form id="roomForm">
+    <input type="text" name="room_name" placeholder="ルーム名" required>
+    <input type="password" name="password" placeholder="パスワード（任意）">
+
+    <select name="max_players">
+      <option value="2">2人</option>
+      <option value="3">3人</option>
+      <option value="4">4人</option>
+    </select>
+
+    <button type="submit">作成</button>
+  </form>
+
+  <button class="back-btn" onclick="goBack()">← 戻る</button>
+
+  <p id="result"></p>
+</div>
+
+<script>
+  const user_id = localStorage.getItem("user_id");
+
+  if (!user_id) {
+    alert("ログインしてください");
+    location.href = "/";
+  }
+
+  function goBack() {
+    history.back();
+  }
+
+  document.getElementById("roomForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    formData.append("owner_id", user_id);
+
+    const res = await fetch("/room/create", {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      location.href = `/room/wait?room_id=${data.room_id}`;
+    } else {
+      document.getElementById("result").innerText = data.detail;
+    }
+  });
+</script>
+
+</body>
+</html>

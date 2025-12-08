@@ -8,6 +8,10 @@
 <body>
 
 <div class="container">
+
+  <!-- 👤 ユーザー名表示 -->
+  <p id="username-label" class="username"></p>
+
   <h1 class="title">🎮 プレイモード選択</h1>
 
   <div class="button-container">
@@ -16,14 +20,27 @@
     <button onclick="goJoin()">🔎 ルーム参加</button>
   </div>
 
+  <!-- 🔓 ログアウト -->
   <div class="logout">
-    <button class="back" onclick="goHome()">← ホームに戻る</button>
+    <button class="logout-btn" onclick="logout()">ログアウト</button>
   </div>
+
 </div>
 
 <script>
+  // ✅ ユーザー名表示
+  const username = localStorage.getItem("username");
+
+  if (username) {
+    document.getElementById("username-label").innerText = `ようこそ、${username} さん！`;
+  } else {
+    alert("ログイン情報がありません。ホームに戻ります。");
+    window.location.href = "/";
+  }
+
+  // 画面遷移
   function goSingle() {
-    window.location.href = "/play";
+    window.location.href = "/upload";
   }
 
   function goCreate() {
@@ -34,8 +51,12 @@
     window.location.href = "/room/join";
   }
 
-  function goHome() {
-    window.location.href = "/";
+  // ✅ ログアウト処理
+  function logout() {
+    if (confirm("ログアウトしますか？")) {
+      localStorage.clear(); // ログイン情報削除
+      window.location.href = "/";
+    }
   }
 </script>
 

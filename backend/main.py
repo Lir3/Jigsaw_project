@@ -3,7 +3,8 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
-from routers import puzzle, user
+from routers import puzzle, user, room
+
 
 app = FastAPI()
 
@@ -25,6 +26,7 @@ app.mount("/static", StaticFiles(directory=os.path.join(frontend_path)), name="s
 # --- ルーター登録 ---
 app.include_router(puzzle.router, prefix="/puzzle")
 app.include_router(user.router, prefix="/user")
+app.include_router(room.router, prefix="/room")
 
 # --- ホーム画面 (index.html) ---
 @app.get("/")
@@ -83,3 +85,7 @@ def serve_room_create():
 def serve_room_join():
     path = os.path.join(frontend_path, "room_join.html")
     return FileResponse(path)
+#待機部屋（仮）
+@app.get("/room/wait")
+def wait_room(room_id: str):
+    return {"message": f"Room {room_id} waiting..."}
