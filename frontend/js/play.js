@@ -301,6 +301,16 @@ window.addEventListener('mousemove', (ev) => {
     movingPiece.X = ev.clientX - rect.left - movingPiece.offsetX;
     movingPiece.Y = ev.clientY - rect.top - movingPiece.offsetY;
 
+    // --- キャンバス外に出ないように制限 ---
+    const maxX = can.width - pieceSize * 1.5;
+    const maxY = can.height - pieceSize * 1.5;
+
+    if (movingPiece.X < 0) movingPiece.X = 0;
+    if (movingPiece.Y < 0) movingPiece.Y = 0;
+    if (movingPiece.X > maxX) movingPiece.X = maxX;
+    if (movingPiece.Y > maxY) movingPiece.Y = maxY;
+
+
     // --- 自動スクロール ---
     const margin = 100; // 端からの距離でスクロール
     const scrollSpeed = 20; // スクロール速度
