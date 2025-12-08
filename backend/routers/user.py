@@ -67,3 +67,16 @@ async def login(username: str = Form(...), password: str = Form(...)):
 @router.get("/")
 def read_user():
     return {"message": "User router is working"}
+
+from fastapi import Header, HTTPException
+
+def get_current_user(authorization: str = Header(None)):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="未ログイン")
+
+    # 仮のユーザー（あとでJWTやSupabase認証に変える）
+    return {
+        "id": authorization,
+        "username": "test_user"
+    }
+
