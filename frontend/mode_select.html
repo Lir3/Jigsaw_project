@@ -1,64 +1,73 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8">
   <title>プレイモード選択</title>
   <link rel="stylesheet" href="/static/css/mode_select.css">
 </head>
+
 <body>
 
-<div class="container">
+  <div class="container">
 
-  <!-- 👤 ユーザー名表示 -->
-  <p id="username-label" class="username"></p>
+    <!-- 👤 ユーザー名表示 -->
+    <p id="username-label" class="username"></p>
 
-  <h1 class="title">🎮 プレイモード選択</h1>
+    <h1 class="title">🎮 プレイモード選択</h1>
 
-  <div class="button-container">
-    <button onclick="goSingle()">🧩 シングルプレイ</button>
-    <button onclick="goCreate()">🏠 ルーム作成</button>
-    <button onclick="goJoin()">🔎 ルーム参加</button>
+    <div class="button-container">
+      <button onclick="goSingle()">🧩 シングルプレイ</button>
+      <button onclick="goCreate()">🏠 ルーム作成</button>
+      <button onclick="goJoin()">🔎 ルーム参加</button>
+    </div>
+
+    <!-- 🔓 ログアウト -->
+    <div class="logout">
+      <button class="logout-btn" onclick="logout()">ログアウト</button>
+    </div>
+
   </div>
 
-  <!-- 🔓 ログアウト -->
-  <div class="logout">
-    <button class="logout-btn" onclick="logout()">ログアウト</button>
-  </div>
+  <script>
+    // ✅ ユーザー名表示
+    const username = localStorage.getItem("username");
 
-</div>
-
-<script>
-  // ✅ ユーザー名表示
-  const username = localStorage.getItem("username");
-
-  if (username) {
-    document.getElementById("username-label").innerText = `ようこそ、${username} さん！`;
-  } else {
-    alert("ログイン情報がありません。ホームに戻ります。");
-    window.location.href = "/";
-  }
-
-  // 画面遷移
-  function goSingle() {
-    window.location.href = "/upload";
-  }
-
-  function goCreate() {
-    window.location.href = "/room/create";
-  }
-
-  function goJoin() {
-    window.location.href = "/room/join";
-  }
-
-  // ✅ ログアウト処理
-  function logout() {
-    if (confirm("ログアウトしますか？")) {
-      localStorage.clear(); // ログイン情報削除
+    if (username) {
+      document.getElementById("username-label").innerText = `ようこそ、${username} さん！`;
+    } else {
+      alert("ログイン情報がありません。ホームに戻ります。");
       window.location.href = "/";
     }
-  }
-</script>
+
+    // 画面遷移
+    function goSingle() {
+      window.location.href = "/upload";
+    }
+
+    function goCreate() {
+      window.location.href = "/room/create";
+    }
+
+    function goJoin() {
+      window.location.href = "/room/join";
+    }
+
+    // ✅ ログアウト処理
+    function logout() {
+      if (confirm("ログアウトしますか？")) {
+        localStorage.clear(); // ログイン情報削除
+        window.location.href = "/";
+      }
+      localStorage.removeItem('uploadedImage');
+
+      const preview = document.getElementById('completedImagePreview');
+      if (preview) {
+        preview.src = '';
+      }
+    }
+  </script>
 
 </body>
+
 </html>

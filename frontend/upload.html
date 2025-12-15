@@ -5,13 +5,80 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>ジグソーパズルアップロード</title>
-    <link rel="stylesheet" href="/static/css/upload.css">
+    <!-- <link rel="stylesheet" href="/static/css/upload.css"> -->
+
+    <style>
+        /* 完成図のドラッグ移動用スタイル */
+        #completedImagePreview {
+            position: fixed;
+            /* 画面上に固定（スクロールしても追従） */
+            top: 60px;
+            /* 初期位置 Y */
+            left: 20px;
+            /* 初期位置 X */
+            z-index: 1000;
+            /* パズルより手前に表示 */
+            cursor: grab;
+            /* カーソルを「掴む手」に */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            /* 影をつけて浮いている感を出す */
+            border: 4px solid #fff;
+            /* 白枠 */
+            border-radius: 4px;
+            max-width: 300px;
+            /* 最大サイズ制限 */
+            display: none;
+            /* 初期状態は非表示（JSで制御） */
+            user-select: none;
+            /* 選択不可にする */
+        }
+
+        #completedImagePreview:active {
+            cursor: grabbing;
+            /* ドラッグ中は「掴んでいる手」に */
+        }
+
+        /* 全体のレイアウト調整（余白削除） */
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: sans-serif;
+            background-color: #f0f0f0;
+        }
+
+        #controls {
+            margin-bottom: 20px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: inline-block;
+        }
+
+        #toggleCompletedBtn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            /* 左ではなく右上に配置変更（お好みで） */
+            z-index: 1001;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+
+        #can {
+            display: block;
+            background-color: #ddd;
+            /* パズルエリアの背景色 */
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.1);
+            margin-top: 10px;
+        }
+    </style>
 </head>
 
 <body>
     <h1>ジグソーパズル</h1>
 
-    <div id="controls" style="margin-left:280px;"> <!-- 左に完成図分スペースを確保 -->
+    <div id="controls">
         <label for="imageInput">画像を選択：</label>
         <input type="file" id="imageInput" accept="image/*"><br><br>
 
@@ -25,14 +92,14 @@
         <button id="startBtn">パズル開始</button>
         <button id="resetBtn">リセット</button>
         <button id="hintBtn">ヒント</button>
-        <span id="time" style="display:inline">0 秒</span>
+        <span id="time" style="display:inline; margin-left:10px; font-weight:bold;">0 秒</span>
     </div>
 
-    <canvas id="can" style="margin-top:20px; margin-left:280px;"></canvas> <!-- 左に完成図分スペース -->
+    <canvas id="can"></canvas>
 
-    <img id="completedImagePreview">
+    <img id="completedImagePreview" draggable="false">
 
-    <button id="toggleCompletedBtn" style="position:fixed; top:280px; left:20px; z-index:1000;">完成図表示/非表示</button>
+    <button id="toggleCompletedBtn">完成図 ON/OFF</button>
 
 
     <script>
@@ -54,10 +121,16 @@
         // パズル開始
         startBtn.addEventListener('click', () => {
             if (!uploadedImageBase64) {
-                alert("画像を選択してください。");
-                return;
+                // 画像が選択されていない場合はアラート
+                // ※デバッグ用にデフォルト画像があるならスルーでも可
+                if (!localStorage.getItem('uploadedImage')) {
+                    alert("画像を選択してください。");
+                    return;
+                }
             }
-            localStorage.setItem('uploadedImage', uploadedImageBase64);
+            if (uploadedImageBase64) {
+                localStorage.setItem('uploadedImage', uploadedImageBase64);
+            }
 
             // 選択した難易度も保存
             const difficulty = document.getElementById('difficulty').value;
@@ -66,6 +139,56 @@
             // ページリロードして play.js で読み込み
             window.location.reload();
         });
+
+        // --- 完成図ドラッグ機能 ---
+        const previewImg = document.getElementById('completedImagePreview');
+        let isDraggingImg = false;
+        let imgOffsetX, imgOffsetY;
+
+        previewImg.addEventListener('mousedown', (e) => {
+            // 左クリックのみ反応
+            if (e.button !== 0) return;
+            isDraggingImg = true;
+
+            // クリックした位置と画像の左上との差分を計算
+            const rect = previewImg.getBoundingClientRect();
+            imgOffsetX = e.clientX - rect.left;
+            imgOffsetY = e.clientY - rect.top;
+
+            // ブラウザのデフォルトのドラッグ動作を無効化
+            e.preventDefault();
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDraggingImg) return;
+
+            // 新しい位置を計算
+            const newLeft = e.clientX - imgOffsetX;
+            const newTop = e.clientY - imgOffsetY;
+
+            previewImg.style.left = `${newLeft}px`;
+            previewImg.style.top = `${newTop}px`;
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDraggingImg = false;
+        });
+
+        // 完成図のON/OFF切り替え
+        const toggleBtn = document.getElementById('toggleCompletedBtn');
+        const previewImgElement = document.getElementById('completedImagePreview');
+
+        toggleBtn.addEventListener('click', () => {
+            // 現在の display スタイルを確認して切り替える
+            if (previewImgElement.style.display === 'none' || previewImgElement.style.display === '') {
+                previewImgElement.style.display = 'block'; // 表示
+                toggleBtn.textContent = '完成図を隠す';     // ボタンの文字変更（任意）
+            } else {
+                previewImgElement.style.display = 'none';  // 非表示
+                toggleBtn.textContent = '完成図を見る';     // ボタンの文字変更（任意）
+            }
+        });
+
     </script>
 
     <script src="/static/js/play.js"></script>
