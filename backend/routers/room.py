@@ -62,7 +62,7 @@ def get_rooms():
             "name": room["name"],
             "max_players": room["max_players"],
             "current_players": current_players,
-            "has_password": room["password"] is not None
+            "has_password": bool(room["password"])
         })
 
     return {"rooms": rooms}
