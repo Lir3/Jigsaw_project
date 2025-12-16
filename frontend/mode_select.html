@@ -18,8 +18,8 @@
 
     <div class="button-container">
       <button onclick="goSingle()">🧩 シングルプレイ</button>
-      <button onclick="goCreate()">🏠 ルーム作成</button>
-      <button onclick="goJoin()">🔎 ルーム参加</button>
+      
+      <button onclick="goJoin()">🔎 ルーム一覧</button>
     </div>
 
     <!-- 🔓 ログアウト -->
@@ -50,7 +50,7 @@
     }
 
     function goJoin() {
-      window.location.href = "/room/join";
+      window.location.href = "/room/list-page";
     }
 
     // ✅ ログアウト処理

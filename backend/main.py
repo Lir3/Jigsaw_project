@@ -85,7 +85,25 @@ def serve_room_create():
 def serve_room_join():
     path = os.path.join(frontend_path, "room_join.html")
     return FileResponse(path)
+
+# --- ルーム一覧ページ ---
+@app.get("/room/list")
+def serve_room_list():
+    path = os.path.join(frontend_path, "room_list.html")
+    if not os.path.exists(path):
+        return JSONResponse(content={"error": "room_list.html が存在しません"}, status_code=404)
+    return FileResponse(path)
+
 #待機部屋（仮）
 @app.get("/room/wait")
 def wait_room(room_id: str):
     return {"message": f"Room {room_id} waiting..."}
+
+# ルーム一覧ページ
+@app.get("/room/list-page")
+def serve_room_list():
+    path = os.path.join(frontend_path, "room_list.html")
+    return FileResponse(path)
+
+
+

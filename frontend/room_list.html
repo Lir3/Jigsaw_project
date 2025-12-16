@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ルーム一覧</title>
+  <link rel="stylesheet" href="/static/css/room_list.css">
+</head>
+
+<body>
+  <div class="container">
+    <h1 class="title">ルーム一覧</h1>
+
+    <div id="roomList" class="room-list"></div>
+
+    <div class="buttons">
+      <button onclick="location.href='/room/create'">🏠 ルーム作成</button>
+      <button onclick="location.href='/mode'">戻る</button>
+    </div>
+  </div>
+
+<script>
+async function fetchRooms() {
+  try {
+    const res = await fetch("http://127.0.0.1:8000/room/list");
+    const data = await res.json();
+
+    const list = document.getElementById("roomList");
+    list.innerHTML = "";
+
+    if (!data.rooms || data.rooms.length === 0) {
+      list.innerHTML = "<p>現在ルームはありません</p>";
+      return;
+    }
+
+    data.rooms.forEach(room => {
+      const isFull = room.current_players >= room.max_players;
+
+      const div = document.createElement("div");
+      div.className = "room-card";
+
+      div.innerHTML = `
+        <div class="room-info">
+          <p class="room-name">
+            ${room.name}
+            ${room.has_password ? "🔒" : ""}
+          </p>
+          <p>
+            人数：${room.current_players} / ${room.max_players}
+          </p>
+        </div>
+
+        <button
+          ${isFull ? "disabled" : ""}
+          onclick="joinRoom('${room.id}', ${room.has_password})">
+          ${isFull ? "満員" : "参加"}
+        </button>
+      `;
+
+      list.appendChild(div);
+    });
+
+  } catch (e) {
+    alert("ルーム取得失敗");
+  }
+}
+
+function joinRoom(roomId, hasPassword) {
+  if (hasPassword) {
+    const password = prompt("パスワードを入力してください");
+    if (!password) return;
+
+    localStorage.setItem("room_password", password);
+  }
+
+  window.location.href = `/room/wait?room_id=${roomId}`;
+}
+
+fetchRooms();
+</script>
+
+</body>
+</html>

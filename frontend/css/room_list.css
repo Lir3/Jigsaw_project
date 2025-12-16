@@ -1,0 +1,85 @@
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  background: repeating-linear-gradient(
+    45deg,
+    #7fdde6,
+    #7fdde6 20px,
+    #9ee7ee 20px,
+    #9ee7ee 40px
+  );
+}
+
+.container {
+  max-width: 600px;
+  margin: 100px auto;
+  background: white;
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  text-align: center;
+}
+
+.title {
+  font-size: 32px;
+  margin-bottom: 30px;
+}
+
+.room-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.room-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border-radius: 12px;
+  background: #f4f9ff;
+}
+
+.room-name {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.room-card button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #6fa8ff;
+  color: white;
+  cursor: pointer;
+}
+
+.room-card button:hover {
+  background: #4f8df0;
+}
+
+.buttons {
+  margin-top: 30px;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.buttons button {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: none;
+  background: #6fa8ff;
+  color: white;
+  cursor: pointer;
+}
+
+.buttons button:hover {
+  background: #4f8df0;
+}
+
+.room-card button:disabled {
+  background-color: #aaa;
+  color: #fff;
+  cursor: not-allowed;
+}

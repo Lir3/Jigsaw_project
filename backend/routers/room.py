@@ -36,3 +36,33 @@ def create_room(
     }).execute()
 
     return {"message": "ルーム作成成功", "room_id": room_id}
+
+@router.get("/list")
+def get_rooms():
+    rooms_result = supabase.table("rooms").select(
+        "id, name, max_players, password"
+    ).execute()
+
+    if not rooms_result.data:
+        return {"rooms": []}
+
+    rooms = []
+
+    for room in rooms_result.data:
+        # 参加人数を数える
+        members_result = supabase.table("room_members") \
+            .select("id", count="exact") \
+            .eq("room_id", room["id"]) \
+            .execute()
+
+        current_players = members_result.count or 0
+
+        rooms.append({
+            "id": room["id"],
+            "name": room["name"],
+            "max_players": room["max_players"],
+            "current_players": current_players,
+            "has_password": room["password"] is not None
+        })
+
+    return {"rooms": rooms}
