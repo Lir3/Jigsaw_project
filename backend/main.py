@@ -158,3 +158,9 @@ def wait_room(room_id: str):
 def serve_room_list():
     path = os.path.join(frontend_path, "room_list.html")
     return FileResponse(path)
+
+#接続テストページ
+@app.get("/room/wait")
+def serve_room_wait():
+    path = os.path.join(frontend_path, "room_wait.html")
+    return FileResponse(path)
