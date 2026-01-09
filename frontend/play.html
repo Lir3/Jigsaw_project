@@ -3,23 +3,92 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>ジグソーパズル</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>パズルプレイ - シングルモード</title>
     <link rel="stylesheet" href="/static/css/play.css">
+    <style>
+        /* プレイ画面専用のスタイル */
+        .header-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: #333;
+            color: white;
+        }
+
+        .timer-box {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 8px 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .btn-save {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-back {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-reset {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        #status-msg {
+            margin-left: 10px;
+            font-size: 0.9rem;
+            color: #ffc107;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: calc(100vh - 60px);
+            overflow: auto;
+            background-color: #eee;
+        }
+    </style>
 </head>
 
 <body>
 
-    <p>
-        <button id="shuffle" onclick="shuffle()">シャッフル</button>
-        <span id="time"></span>
-    </p>
-    <p id="how-to-play">各ピースはドラッグ＆ドロップで移動できます。</p>
+    <div class="header-controls">
+        <div class="timer-box">
+            時間: <span id="time">0</span> 秒
+            <span id="status-msg"></span>
+        </div>
 
-    <div id="puzzle-container">
+        <div class="btn-group">
+            <button class="btn-save" onclick="saveGame()">データを保存</button>
+            <button class="btn-reset" id="resetBtn">リセット</button>
+            <button class="btn-back" onclick="backToGallery()">保存して終了</button>
+        </div>
+    </div>
+
+    <div id="canvas-container">
         <canvas id="can"></canvas>
     </div>
+
+    <img id="completedImagePreview" style="display:none;">
+
+    <script src="/static/js/puzzle_logic.js"></script>
+
+    <script src="/static/js/single_play.js"></script>
+
 </body>
-<script src="/static/js/play.js"></script>
 
 </html>

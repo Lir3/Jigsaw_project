@@ -17,22 +17,25 @@ const $status = document.getElementById('status-msg'); // HTML要素 (single_pla
 // ピースクラス
 // ピースクラス（グルーピング＋回転対応版）
 class Piece {
-    constructor(image, outline, x, y) {
+    // 5番目の引数 "originalIndex" を追加
+    constructor(image, outline, x, y, originalIndex) {
         this.Image = image;
         this.Outline = outline;
         this.X = x;
         this.Y = y;
+
+        // ★重要：受け取った値をプロパティとして保存
+        this.originalIndex = originalIndex;
+
         this.OriginalCol = Math.round(x / pieceSize);
         this.OriginalRow = Math.round(y / pieceSize);
         this.IsLocked = false;
 
-        this.group = [this];
+        this.group = [this]; // グループ（小文字）
         this.scale = 1;
         this.shadow = false;
 
-        // --- 追加部分 ---
-        this.Rotation = 0; // 0:0度, 1:90度, 2:180度, 3:270度
-
+        this.Rotation = 0; // 回転（大文字）
         this.startX = 0;
         this.startY = 0;
     }
@@ -80,8 +83,8 @@ class Piece {
 // タイマー開始関数
 function startTimer() {
     if (timer) clearInterval(timer);
-    time = 0;
-    $time.innerHTML = '0 秒';
+    $time.innerHTML = `${time} 秒`;
+
     $time.style.color = '#000';
     timer = setInterval(() => {
         time++;
@@ -89,7 +92,6 @@ function startTimer() {
     }, 1000);
 }
 
-// --- window.onload ---
 async function initPuzzle(imageUrl, savedPiecesData) {
     if (!can) return;
 
@@ -169,39 +171,56 @@ async function initPuzzle(imageUrl, savedPiecesData) {
     }
 
     pieces = [];
+    let idx = 0; // カウンター
     for (let row = 0; row < rowMax; row++) {
         for (let col = 0; col < colMax; col++) {
             const image = await createPiece(resizedImage, row, col, rowMax, colMax, false);
             const outline = await createPiece(resizedImage, row, col, rowMax, colMax, true);
-
-            // デフォルトの位置
-            const p = new Piece(image, outline, col * pieceSize, row * pieceSize);
-
-            // === ピースデータの復元ロジック (single_play.js から連携) ===
-            const saved = savedPiecesData.find(sp => sp.piece_index === pieces.length);
-            if (saved) {
-                p.X = saved.x;
-                p.Y = saved.y;
-                p.Rotation = Math.round(saved.rotation / 90); // ラジアンを 0-3 の整数に変換 (コードのRotationに合わせて)
-                p.IsLocked = saved.is_locked;
-            }
+            // ★ originalIndex (idx) を渡して作成
+            const p = new Piece(image, outline, col * pieceSize, row * pieceSize, idx);
             pieces.push(p);
+            idx++;
         }
     }
 
-    // === グループ参照の復元 ===
-    if (savedPiecesData.length > 0) {
-        // savedPiecesDataのgroup_idに基づき、pieces[i].group を再構築するロジックをここに実装
-        // ... (single_play.jsのコメントにあったグループ復元ロジック) ...
+    // 保存データの位置・回転・ロック状態の適用
+    if (savedPiecesData && savedPiecesData.length > 0) {
+        savedPiecesData.forEach(s => {
+            const p = pieces.find(item => item.originalIndex === s.piece_index);
+            if (p) {
+                p.X = s.x;
+                p.Y = s.y;
+                p.Rotation = s.rotation;
+                p.IsLocked = s.is_locked;
+            }
+        });
+
+        // === グループ参照の復元 (★ここを追記) ===
+        savedPiecesData.forEach(s => {
+            const currentPiece = pieces.find(p => p.originalIndex === s.piece_index);
+            const leaderPiece = pieces.find(p => p.originalIndex === s.group_id);
+
+            if (currentPiece && leaderPiece && currentPiece !== leaderPiece) {
+                // すでに同じグループに属していないかチェック
+                if (!leaderPiece.group.includes(currentPiece)) {
+                    // leaderのグループ配列に自分を追加
+                    leaderPiece.group.push(currentPiece);
+                    // 自分のグループ参照をleaderのものと同じにする
+                    currentPiece.group = leaderPiece.group;
+                }
+            }
+        });
+        console.log("保存された状態から復元しました。");
     } else {
+        console.log("新規プレイのためシャッフルします。");
         shuffleInitial();
     }
-
     drawAll();
 
     // リセットボタン
     const resetBtn = document.getElementById('resetBtn');
     if (resetBtn) resetBtn.addEventListener('click', () => {
+        time = 0;
         shuffleInitial();
         drawAll();
         startTimer(); // ←リセット時もタイマー再スタート
@@ -227,25 +246,23 @@ async function initPuzzle(imageUrl, savedPiecesData) {
     });
 };
 
-// --- 画像関連関数 ---
-async function createSourceImage() {
-    return new Promise(resolve => {
+// 画像読み込み関数
+async function createSourceImage(url) {
+    return new Promise((resolve, reject) => {
         const image = new Image();
-
-        const uploaded = localStorage.getItem('uploadedImage');
-        image.src = uploaded ? uploaded : '/static/favicon1.png';
-
-        image.onload = () => resolve(image);
-
-        image.onerror = () => {
-            console.warn("画像読み込み失敗。デフォルト画像を使用します");
-            const fallback = new Image();
-            fallback.src = '/static/favicon1.png';
-            fallback.onload = () => resolve(fallback);
+        // 🚨 外部URLの画像を使うために必須の設定
+        image.crossOrigin = "anonymous";
+        image.src = url;
+        image.onload = () => {
+            console.log("画像読み込み完了:", url);
+            resolve(image);
+        };
+        image.onerror = (err) => {
+            console.error("画像読み込みエラー:", url, err);
+            reject(err);
         };
     });
 }
-
 
 async function createPiece(sourceImage, row, col, rowMax, colMax, outlineOnly) {
     const canvas = document.createElement('canvas');

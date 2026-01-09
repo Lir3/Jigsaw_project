@@ -1,13 +1,3 @@
-// --- グローバル変数 (パズルロジックファイルから取得することを想定) ---
-// 🚨 注意: これらの変数は、別途読み込まれるパズルロジックファイル (例: puzzle_logic.js)
-//         の中でグローバル変数として定義されている必要があります。
-// let pieces = []; 
-// let time = 0;
-// let isGameCompleted = false;
-// let timer = null;
-// const $time = document.getElementById('time');
-// const $status = document.getElementById('status-msg');
-
 
 const API_BASE_URL = "";
 const userId = localStorage.getItem("user_id");
@@ -38,34 +28,33 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadGameData(sessionId) {
     try {
         const res = await fetch(`${API_BASE_URL}/puzzle/session/${sessionId}`);
-        if (!res.ok) throw new Error("セッションデータが見つかりません。");
-
+        if (!res.ok) throw new Error("セッションが見つかりません");
         const data = await res.json();
         const session = data.session;
 
-        // 1. グローバル変数を更新
-        time = session.elapsed_time;
-        isGameCompleted = session.is_completed;
+        time = session.elapsed_time || 0;
+
+        // 2. 画面上の表示も即座に更新しておく
+        if ($time) {
+            $time.innerHTML = `${time} `;
+        }
+        // --------------------
+
+        // パズルの初期化（画像やピース位置の復元）
         const imageUrl = session.puzzle_masters.image_url;
+        await initPuzzle(imageUrl, data.pieces);
 
-        // 2. パズルロジックの初期化関数を呼び出し
-        // ★この関数は、パズルロジックファイル (puzzle_logic.js) に実装されている必要があります
-        // initPuzzle(imageUrl, data.pieces); 
-
-        // 3. タイマーを再開
-        if (!isGameCompleted) {
-            startTimer(); // ★この関数もパズルロジックファイルに実装されている必要があります
+        // ゲームが完了していなければタイマーを開始
+        if (!session.is_completed) {
+            startTimer();
         } else {
-            // クリア済みの場合は時間を表示してタイマーは起動しない
-            if (timer) clearInterval(timer);
+            // 完了済みの場合は「完了」表示にする
             $time.innerHTML = `完了! ${time} 秒`;
-            $time.style.color = 'red';
+            $time.style.color = '#f00';
         }
 
     } catch (e) {
-        console.error("データのロードに失敗:", e);
-        alert("ゲームデータの読み込みに失敗しました。");
-        window.location.href = "/single/gallery"; // ギャラリーに戻す
+        console.error("データの読み込みに失敗しました:", e);
     }
 }
 
@@ -73,24 +62,30 @@ async function loadGameData(sessionId) {
 //  保存処理 (ボタンクリック時)
 // ----------------------------------------------------
 
-// グループIDを決定するヘルパー関数
 function getGroupId(piece) {
-    // グループ内のピース配列を参照し、そのグループの最初のピースのインデックスをグループIDとする
-    // これにより、保存時の一意性が保証される（再開時にはこのIDを使って再構築する）
-    return pieces.indexOf(piece.Group[0]);
+    if (piece && piece.group && piece.group.length > 0) {
+        // グループの親も originalIndex で指定する
+        return piece.group[0].originalIndex;
+    }
+    return piece.originalIndex;
 }
 
 /**
  * 現在のパズル状態をサーバーに保存する
  */
 async function saveGame() {
+    // ピースが生成されていない場合は保存しない
+    if (!pieces || pieces.length === 0) {
+        console.warn("保存するピースがありません。");
+        return;
+    }
     if (!sessionId || !userId) return;
 
     $status.innerHTML = "Saving...";
 
     // 保存用データ作成
-    const piecesData = pieces.map((p, index) => ({
-        piece_index: index,
+    const piecesData = pieces.map((p) => ({
+        piece_index: p.originalIndex, // ★ 配列の index ではなく、p.originalIndex を使う
         x: p.X,
         y: p.Y,
         rotation: p.Rotation,
@@ -99,7 +94,7 @@ async function saveGame() {
     }));
 
     try {
-        await fetch(`${API_BASE_URL}/puzzle/session/${sessionId}/save`, {
+        const response = await fetch(`${API_BASE_URL}/puzzle/session/${sessionId}/save`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -110,8 +105,13 @@ async function saveGame() {
             })
         });
 
-        $status.innerHTML = "Saved!";
-        setTimeout(() => $status.innerHTML = "", 2000);
+        if (response.ok) {
+            $status.innerHTML = "Saved!";
+            console.log("保存成功");
+            setTimeout(() => $status.innerHTML = "", 2000);
+        } else {
+            throw new Error("Save request failed");
+        }
 
     } catch (error) {
         console.error("データの保存に失敗:", error);
