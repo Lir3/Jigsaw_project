@@ -66,3 +66,51 @@ def get_rooms():
         })
 
     return {"rooms": rooms}
+
+
+@router.post("/join")
+def join_room(
+    room_id: str = Form(...),
+    current_user=Depends(get_current_user)
+):
+    # すでに参加しているか確認
+    exists = supabase.table("room_members") \
+        .select("id") \
+        .eq("room_id", room_id) \
+        .eq("user_id", current_user["id"]) \
+        .execute()
+
+    if exists.data:
+        return {"message": "すでに参加しています"}
+
+    # 参加登録
+    supabase.table("room_members").insert({
+        "id": str(uuid.uuid4()),
+        "room_id": room_id,
+        "user_id": current_user["id"]
+    }).execute()
+
+    return {"message": "ルーム参加成功"}
+
+@router.get("/wait/info")
+def get_room_wait_info(room_id: str):
+    room = supabase.table("rooms") \
+        .select("id, name") \
+        .eq("id", room_id) \
+        .single() \
+        .execute()
+
+    if not room.data:
+        raise HTTPException(status_code=404, detail="ルームが存在しません")
+
+    members = supabase.table("room_members") \
+        .select("user_id") \
+        .eq("room_id", room_id) \
+        .execute()
+
+    return {
+        "room": room.data,
+        "members": members.data
+    }
+
+

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ルーム待機</title>
+</head>
+<body>
+
+<h1 id="roomName">ルーム</h1>
+
+<h2>参加者一覧</h2>
+<ul id="memberList"></ul>
+
+<p>※ 接続テスト中</p>
+
+<script>
+const params = new URLSearchParams(location.search);
+const roomId = params.get("room_id");
+const userId = localStorage.getItem("user_id");
+
+async function joinRoom() {
+  const form = new FormData();
+  form.append("room_id", roomId);
+
+  await fetch("http://127.0.0.1:8000/room/join", {
+    method: "POST",
+    headers: {
+      "Authorization": userId
+    },
+    body: form
+  });
+}
+
+async function loadRoomInfo() {
+  const res = await fetch(
+    `http://127.0.0.1:8000/room/wait/info?room_id=${roomId}`
+  );
+  const data = await res.json();
+
+  document.getElementById("roomName").innerText = data.room.name;
+
+  const list = document.getElementById("memberList");
+  list.innerHTML = "";
+
+  data.members.forEach(m => {
+    const li = document.createElement("li");
+    li.textContent = m.user_id;
+    list.appendChild(li);
+  });
+}
+
+(async () => {
+  await joinRoom();
+  await loadRoomInfo();
+})();
+</script>
+
+</body>
+</html>
