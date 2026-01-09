@@ -3,6 +3,7 @@ import os
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
+import supabase
 from routers import puzzle, user, room
 
 
