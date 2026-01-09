@@ -86,3 +86,35 @@ async function startNewGame(puzzleId) {
 function resumeGame(sessionId) {
     window.location.href = `/play?session_id=${sessionId}`;
 }
+
+// アップロード処理
+async function handleUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch(`${API_BASE_URL}/puzzle/upload?user_id=${userId}`, {
+        method: "POST",
+        body: formData
+    });
+
+    if (res.ok) {
+        alert("アップロード完了！");
+        location.reload(); // 再読み込みして反映
+    }
+}
+
+// 削除処理
+async function deletePuzzle(puzzleId) {
+    if (!confirm("このパズルを削除しますか？（保存したデータも消えます）")) return;
+
+    const res = await fetch(`${API_BASE_URL}/puzzle/${puzzleId}`, {
+        method: "DELETE"
+    });
+
+    if (res.ok) {
+        location.reload();
+    }
+}
