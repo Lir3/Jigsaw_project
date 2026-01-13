@@ -48,8 +48,6 @@
         const data = await res.json();
 
         if (res.ok) {
-          console.log("Login success:", data);
-          alert("Login Successful! New ID: " + data.user_id); // Debug alert
           localStorage.setItem("user_id", data.user_id);
           localStorage.setItem("username", data.username);
           window.location.href = "/mode"; // モード選択画面へ
