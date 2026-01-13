@@ -148,11 +148,6 @@ def serve_room_list():
         return JSONResponse(content={"error": "room_list.html が存在しません"}, status_code=404)
     return FileResponse(path)
 
-# 待機部屋（仮）
-@app.get("/room/wait")
-def wait_room(room_id: str):
-    return {"message": f"Room {room_id} waiting..."}
-
 # ルーム一覧ページ
 @app.get("/room/list-page")
 def serve_room_list():
@@ -164,3 +159,4 @@ def serve_room_list():
 def serve_room_wait():
     path = os.path.join(frontend_path, "room_wait.html")
     return FileResponse(path)
+
