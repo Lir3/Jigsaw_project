@@ -8,22 +8,43 @@
 </head>
 
 <body>
+    <div class="container">
+        <h1>シングルプレイ</h1>
+        <div style="text-align: left; margin-bottom: 10px;">
+            <a href="/mode" style="text-decoration: none; color: #333; font-weight: bold;">← 戻る</a>
+        </div>
 
-    <h1>シングルプレイ</h1>
-    <a href="/mode">戻る</a>
-
-    <div class="upload-section">
         <label class="btn-upload">
             新しい画像をアップロード
             <input type="file" id="uploadInput" accept="image/*" onchange="handleUpload(event)" style="display:none">
         </label>
+
+        <h2>つづきから遊ぶ（プレイ中）</h2>
+        <div id="history-list" class="grid"></div>
+
+        <h2>新しく始める</h2>
+        <div id="new-list" class="grid"></div>
     </div>
 
-    <h2>つづきから遊ぶ（プレイ中）</h2>
-    <div id="history-list" class="grid"></div>
-
-    <h2>新しく始める</h2>
-    <div id="new-list" class="grid"></div>
+    <!-- 難易度選択モーダル -->
+    <div id="difficultyModal" class="modal">
+        <div class="modal-content">
+            <h3>難易度を選択</h3>
+            <p>パズルの難易度を選んでください</p>
+            <select id="modalDifficultySelect"
+                style="padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; width: 80%; margin-bottom: 20px;">
+                <option value="easy">簡単（4×4）</option>
+                <option value="normal" selected>普通（6×6）</option>
+                <option value="hard">難しい（8×8）</option>
+            </select>
+            <div style="display: flex; justify-content: space-around;">
+                <button onclick="confirmStartGame()"
+                    style="background: #ffb347; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">開始</button>
+                <button onclick="closeModal()"
+                    style="background: #ccc; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">キャンセル</button>
+            </div>
+        </div>
+    </div>
 
     <script src="/static/js/single_gallery.js"></script>
 </body>

@@ -36,19 +36,20 @@ class Piece {
         this.shadow = false;
 
         this.Rotation = 0; // 回転（大文字）
+        this.visualRotation = 0; // ★表示用の回転角度 (補間用)
         this.startX = 0;
         this.startY = 0;
     }
 
     Draw() {
         ctx.save();
-        // ピースの中心に原点を移動
         ctx.translate(this.X + pieceSize / 2, this.Y + pieceSize / 2);
-        // 拡大縮小
         ctx.scale(this.scale, this.scale);
-        // 回転（角度 * 90度をラジアンに変換）
-        ctx.rotate(this.Rotation * 90 * Math.PI / 180);
-        // 原点を元に戻して描画
+
+        // ★補間された角度を使用
+        const rad = this.visualRotation * 90 * Math.PI / 180;
+        ctx.rotate(rad);
+
         ctx.translate(-pieceSize / 2, -pieceSize / 2);
 
         if (this.shadow) {
@@ -62,29 +63,24 @@ class Piece {
         ctx.drawImage(this.Outline, 0, 0);
         ctx.restore();
     }
-
+    // ... (IsClick, Check, startTimer, initPuzzle methods remain similar but condensed for replacement) ...
     IsClick(x, y) {
         const centerX = this.X + pieceSize / 2;
         const centerY = this.Y + pieceSize / 2;
-
-        const dist = Math.hypot(x - centerX, y - centerY);
-        const hitRadius = pieceSize * 0.8;
-
-        return dist < hitRadius;
+        return Math.hypot(x - centerX, y - centerY) < pieceSize * 0.8;
     }
 
     Check() {
         const col = Math.round(this.X / pieceSize);
         const row = Math.round(this.Y / pieceSize);
-        // 位置が合っていて、かつ回転が0度（正しい向き）であること
         return col === this.OriginalCol && row === this.OriginalRow && this.Rotation === 0;
     }
 }
+
 // タイマー開始関数
 function startTimer() {
     if (timer) clearInterval(timer);
     $time.innerHTML = `${time} 秒`;
-
     $time.style.color = '#000';
     timer = setInterval(() => {
         time++;
@@ -120,30 +116,23 @@ async function initPuzzle(imageUrl, savedPiecesData) {
     }
 
     // 2. 縦横比に基づいた分割数とピースサイズの決定
-
     if (aspectRatio >= 1) {
-        // 横長の場合: 横の分割数を縦横比で調整し、縦の分割数を基準とする
-        rowMax = basePieceCount; // 縦のピース数（短い辺）
-        colMax = Math.round(rowMax * aspectRatio); // 横のピース数（長い辺）
+        rowMax = basePieceCount;
+        colMax = Math.round(rowMax * aspectRatio);
     } else {
-        // 縦長の場合: 縦の分割数を縦横比で調整し、横の分割数を基準とする
-        colMax = basePieceCount; // 横のピース数（短い辺）
-        rowMax = Math.round(colMax / aspectRatio); // 縦のピース数（長い辺）
+        colMax = basePieceCount;
+        rowMax = Math.round(colMax / aspectRatio);
     }
 
     // pieceSize (ピースの1辺のサイズ) を決定
     pieceSize = Math.floor(drawWidth / colMax);
 
     // 3. キャンバスのサイズを決定
-    // ピースサイズと分割数に応じてキャンバスの描画エリアを計算
     const puzzleAreaWidth = colMax * pieceSize;
     const puzzleAreaHeight = rowMax * pieceSize;
 
-    // キャンバス全体のサイズをパズルエリアの約2.5倍/2倍に設定
     can.width = puzzleAreaWidth * 2.5;
     can.height = puzzleAreaHeight * 2;
-
-    // （オプション：Retina対応している場合はdprとctx.scaleの処理をここに入れる）
 
     // 4. 完成図の表示
     const completedCanvas = document.createElement('canvas');
@@ -151,8 +140,6 @@ async function initPuzzle(imageUrl, savedPiecesData) {
     completedCanvas.height = puzzleAreaHeight;
     const cctx = completedCanvas.getContext('2d');
     cctx.drawImage(sourceImage, 0, 0, completedCanvas.width, completedCanvas.height);
-
-
 
     // リサイズ済み画像
     const resizedImage = document.createElement('canvas');
@@ -163,21 +150,17 @@ async function initPuzzle(imageUrl, savedPiecesData) {
 
     const completedPreview = document.getElementById('completedImagePreview');
     if (completedPreview) {
-        // 生成したパズル画像をimgタグのソースに設定
         completedPreview.src = completedCanvas.toDataURL();
-
-        // 最初は非表示にしておく（HTMLのCSSで none にしていますが念のため）
-        // completedPreview.style.display = 'none'; 
     }
 
     pieces = [];
-    let idx = 0; // カウンター
+    let idx = 0;
     for (let row = 0; row < rowMax; row++) {
         for (let col = 0; col < colMax; col++) {
             const image = await createPiece(resizedImage, row, col, rowMax, colMax, false);
             const outline = await createPiece(resizedImage, row, col, rowMax, colMax, true);
-            // ★ originalIndex (idx) を渡して作成
             const p = new Piece(image, outline, col * pieceSize, row * pieceSize, idx);
+            p.visualRotation = p.Rotation; // 初期化
             pieces.push(p);
             idx++;
         }
@@ -191,45 +174,50 @@ async function initPuzzle(imageUrl, savedPiecesData) {
                 p.X = s.x;
                 p.Y = s.y;
                 p.Rotation = s.rotation;
+                p.visualRotation = s.rotation; // 復元時も即時反映
                 p.IsLocked = s.is_locked;
             }
         });
 
-        // === グループ参照の復元 (★ここを追記) ===
+        // グループ参照の復元
         savedPiecesData.forEach(s => {
             const currentPiece = pieces.find(p => p.originalIndex === s.piece_index);
             const leaderPiece = pieces.find(p => p.originalIndex === s.group_id);
 
             if (currentPiece && leaderPiece && currentPiece !== leaderPiece) {
-                // すでに同じグループに属していないかチェック
                 if (!leaderPiece.group.includes(currentPiece)) {
-                    // leaderのグループ配列に自分を追加
                     leaderPiece.group.push(currentPiece);
-                    // 自分のグループ参照をleaderのものと同じにする
                     currentPiece.group = leaderPiece.group;
                 }
             }
         });
-        console.log("保存された状態から復元しました。");
     } else {
-        console.log("新規プレイのためシャッフルします。");
         shuffleInitial();
     }
-    drawAll();
 
     // リセットボタン
     const resetBtn = document.getElementById('resetBtn');
-    if (resetBtn) resetBtn.addEventListener('click', () => {
-        time = 0;
-        shuffleInitial();
-        drawAll();
-        startTimer(); // ←リセット時もタイマー再スタート
-    });
+    // 既存のリスナー重複を防ぐため、単純な追加でなく制御が必要だが、
+    // 無名関数で追加しているので削除困難。
+    // ここでは簡易的に、resetBtnがcloneNodeでリセットされていない限り重複する可能性があるが、
+    // 実用上は画面リロード前提なので許容、あるいは single_play.js 側で制御
+    // ★前回の修正で single_play.js 側でもリスナーをつけているので注意
 
+    if (resetBtn) {
+        // 古いリスナー削除は難しいので、リセットボタン自体の再生成（クローン）によるリスナー削除テクニックを使う手もあるが、
+        // 今回は単純に追加しておく。
+        resetBtn.onclick = () => { // onclickプロパティなら上書きされるので安全
+            time = 0;
+            isGameCompleted = false;
+            shuffleInitial();
+            drawAll();
+            startTimer();
+        };
+    }
 
     // ヒントボタン
     const hintBtn = document.getElementById('hintBtn');
-    if (hintBtn) hintBtn.addEventListener('click', () => {
+    if (hintBtn) hintBtn.onclick = () => {
         const remaining = pieces.filter(p => !p.Check());
         if (remaining.length === 0) return;
         const hintPiece = remaining[Math.floor(Math.random() * remaining.length)];
@@ -243,24 +231,19 @@ async function initPuzzle(imageUrl, savedPiecesData) {
             hintPiece.Y = oldY;
             drawAll();
         }, 1000);
-    });
+    };
+
+    drawAll();
 };
 
 // 画像読み込み関数
 async function createSourceImage(url) {
     return new Promise((resolve, reject) => {
         const image = new Image();
-        // 🚨 外部URLの画像を使うために必須の設定
         image.crossOrigin = "anonymous";
         image.src = url;
-        image.onload = () => {
-            console.log("画像読み込み完了:", url);
-            resolve(image);
-        };
-        image.onerror = (err) => {
-            console.error("画像読み込みエラー:", url, err);
-            reject(err);
-        };
+        image.onload = () => resolve(image);
+        image.onerror = (err) => reject(err);
     });
 }
 
@@ -271,7 +254,6 @@ async function createPiece(sourceImage, row, col, rowMax, colMax, outlineOnly) {
     canvas.width = s * 6;
     canvas.height = s * 6;
 
-    // --- パスの定義 ---
     ctx.beginPath();
     ctx.moveTo(s, s);
     ctx.lineTo(s * 2, s);
@@ -287,14 +269,8 @@ async function createPiece(sourceImage, row, col, rowMax, colMax, outlineOnly) {
     if (col > 0) ctx.arc(s, s * 3, s, Math.PI / 2, Math.PI * 3 / 2, (row + col) % 2 === 1 ? false : true);
     ctx.closePath();
 
-    // --- 変更点: 描画モードの修正 ---
-
-    // 画像を切り抜く（クリップ）
     ctx.clip();
-
-    if (outlineOnly) {
-    } else {
-        // 画像を描画
+    if (!outlineOnly) {
         ctx.drawImage(sourceImage, -(col * pieceSize - s), -(row * pieceSize - s));
     }
 
@@ -311,214 +287,81 @@ async function createImage(base64) {
     });
 }
 
-// --- シャッフル（ランダムな位置と回転） ---
-function shuffleInitial() {
-    if (!pieces || pieces.length === 0) return;
+// --- アニメーションループ ---
+function update() {
+    // 回転アニメーション (線形補間)
+    pieces.forEach(p => {
+        // 目標角度との差分を計算
+        let diff = p.Rotation - p.visualRotation;
 
-    // シャッフルエリアの設定（既存のコードから変更なし）
-    const shuffleAreaStartX = colMax * pieceSize + pieceSize / 2;
-    const shuffleAreaStartY = pieceSize / 2;
-    const shuffleAreaWidth = can.width - shuffleAreaStartX - pieceSize;
-    const shuffleAreaHeight = can.height - shuffleAreaStartY - pieceSize;
+        // 角度のラップアラウンド補正 (3 -> 0 のときは +1 回転とみなす)
+        if (diff < -2) diff += 4;
+        if (diff > 2) diff -= 4;
 
-    // 全てのピースに対して処理を実行
-    pieces.forEach(piece => {
-        // 1. 位置をランダムに設定 (既存)
-        piece.X = shuffleAreaStartX + Math.random() * (shuffleAreaWidth - pieceSize);
-        piece.Y = shuffleAreaStartY + Math.random() * (shuffleAreaHeight - pieceSize);
+        if (Math.abs(diff) > 0.01) {
+            p.visualRotation += diff * 0.2;
+        } else {
+            // ほぼ追いついたら厳密に合わせる（ただしラップアラウンド時は値を正規化）
+            p.visualRotation = p.Rotation;
+        }
+    });
 
-        // 2. 回転をランダムに設定 (新規追加)
-        // 0, 1, 2, 3 のいずれかをランダムに選択 (0° / 90° / 180° / 270°)
-        piece.Rotation = Math.floor(Math.random() * 4);
+    drawAll();
+    requestAnimationFrame(update);
+}
 
-        // 3. その他の初期状態をリセット (既存)
-        piece.IsLocked = false;
-        piece.scale = 1;
-        piece.shadow = false;
+// ... (Rest of shuffleInitial, drawAll, etc) ...
 
-        // 4. グループを自分自身のみにリセット (グルーピング機能を使用している場合)
-        piece.group = [piece];
+// ★グループ回転処理 (位置補正付き)
+function rotateGroup(pivotPiece, direction) {
+    if (!pivotPiece) return;
+
+    // direction: 1 (右回転), -1 (左回転)
+
+    pivotPiece.group.forEach(p => {
+        // 1. 角度の更新
+        if (direction === 1) {
+            p.Rotation = (p.Rotation + 1) % 4;
+        } else {
+            p.Rotation = (p.Rotation - 1 + 4) % 4;
+        }
+
+        // 2. 位置の更新 (Pivot中心)
+        // ※Pivot自身は位置が変わらないのでスキップ
+        if (p === pivotPiece) return;
+
+        // Pivotからの相対座標
+        const relX = p.X - pivotPiece.X;
+        const relY = p.Y - pivotPiece.Y;
+
+        if (direction === 1) {
+            // 右回転 (Clockwise): (x, y) -> (-y, x)
+            // キャンバス座標系(y軸下向き)では:
+            // (1, 0) [右] -> (0, 1) [下]  =>  newX = -relY, newY = relX
+            p.X = pivotPiece.X - relY;
+            p.Y = pivotPiece.Y + relX;
+        } else {
+            // 左回転 (Counter-Clockwise): (x, y) -> (y, -x)
+            // キャンバス座標系では:
+            // (1, 0) [右] -> (0, -1) [上] => newX = relY, newY = -relX
+            p.X = pivotPiece.X + relY;
+            p.Y = pivotPiece.Y - relX;
+        }
     });
 }
 
-// --- 描画 ---
-let movingPiece = null;
-let oldX = 0, oldY = 0;
-
-function drawAll() {
-    ctx.clearRect(0, 0, can.width, can.height);
-
-    let s = pieceSize / 4;
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 4;
-    ctx.strokeRect(s, s, pieceSize * colMax, pieceSize * rowMax);
-
-    pieces.forEach(p => { if (p !== movingPiece) p.Draw(); });
-    if (movingPiece) movingPiece.Draw();
-}
-
-
-let mouseStartX = 0;
-let mouseStartY = 0;
-
-window.addEventListener('mousedown', (ev) => {
-    if (ev.button !== 0) return;
-    const rect = can.getBoundingClientRect();
-    const clickX = ev.clientX - rect.left;
-    const clickY = ev.clientY - rect.top;
-
-    // クリックされたピースを探す（上にあるものから順に）
-    let clickedPiece = null;
-    for (let i = pieces.length - 1; i >= 0; i--) {
-        if (pieces[i].IsClick(clickX, clickY)) {
-            clickedPiece = pieces[i];
-            break;
-        }
-    }
-
-    // ロックされているピースや、ピース以外をクリックした場合は無視
-    if (!clickedPiece || clickedPiece.IsLocked) return;
-
-    movingPiece = clickedPiece;
-    mouseStartX = clickX;
-    mouseStartY = clickY;
-
-    // グループ全体をドラッグ開始状態にする
-    movingPiece.group.forEach(p => {
-        p.startX = p.X;
-        p.startY = p.Y;
-
-        // 演出：少し浮かせる
-        p.scale = 1.05;
-        p.shadow = true;
-
-        // 配列の最後に移動させて最前面に描画する
-        const idx = pieces.indexOf(p);
-        if (idx > -1) {
-            pieces.splice(idx, 1);
-            pieces.push(p);
-        }
-    });
-
-    drawAll();
-});
-
-window.addEventListener('mousemove', (ev) => {
-    if (!movingPiece) return;
-    const rect = can.getBoundingClientRect();
-    const currentX = ev.clientX - rect.left;
-    const currentY = ev.clientY - rect.top;
-
-    // マウスの移動量
-    const dx = currentX - mouseStartX;
-    const dy = currentY - mouseStartY;
-
-    // グループ内の全ピースを移動させる
-    movingPiece.group.forEach(p => {
-        p.X = p.startX + dx;
-        p.Y = p.startY + dy;
-    });
-    // --- キャンバス外に出ないように制限 ---
-    const maxX = can.width - pieceSize * 1.5;
-    const maxY = can.height - pieceSize * 1.5;
-
-    if (movingPiece.X < 0) movingPiece.X = 0;
-    if (movingPiece.Y < 0) movingPiece.Y = 0;
-    if (movingPiece.X > maxX) movingPiece.X = maxX;
-    if (movingPiece.Y > maxY) movingPiece.Y = maxY;
-
-
-    // --- 自動スクロール ---
-    const margin = 100; // 端からの距離でスクロール
-    const scrollSpeed = 20; // スクロール速度
-
-    // 画面下端近く
-    if (ev.clientY > window.innerHeight - margin) {
-        window.scrollBy(0, scrollSpeed);
-    }
-    // 画面上端近く
-    if (ev.clientY < margin) {
-        window.scrollBy(0, -scrollSpeed);
-    }
-    // 画面右端近く
-    if (ev.clientX > window.innerWidth - margin) {
-        window.scrollBy(scrollSpeed, 0);
-    }
-    // 画面左端近く
-    if (ev.clientX < margin) {
-        window.scrollBy(-scrollSpeed, 0);
-    }
-
-    drawAll();
-});
-
-
-window.addEventListener('mouseup', (ev) => {
+// ★キーボード操作 (Q/Eで回転)
+window.addEventListener('keydown', (ev) => {
     if (!movingPiece) return;
 
-    const snapDistance = pieceSize / 3;
-    let merged = false;
-
-    // --- 1. グループ同士の結合判定 ---
-    for (const other of pieces) {
-        if (movingPiece.group.includes(other)) continue;
-
-        // 【追加】回転角度が違うグループとは結合しない
-        if (movingPiece.Rotation !== other.Rotation) continue;
-
-        for (const myP of movingPiece.group) {
-            // ※回転を考慮して、本来の隣接関係をチェックする必要がありますが、
-            // 簡易的な実装として「0度の状態での隣接関係」でチェックします。
-            // 厳密な回転パズルにする場合は、ここが非常に複雑になります。
-
-            const colDiff = Math.abs(myP.OriginalCol - other.OriginalCol);
-            const rowDiff = Math.abs(myP.OriginalRow - other.OriginalRow);
-            const isNeighbor = (colDiff + rowDiff === 1);
-
-            if (isNeighbor) {
-                // 理想的な距離と現在の距離を比較（ここは回転の影響を受けにくい座標差分で計算）
-                const idealDistX = (myP.OriginalCol - other.OriginalCol) * pieceSize;
-                const idealDistY = (myP.OriginalRow - other.OriginalRow) * pieceSize;
-                const currentDistX = myP.X - other.X;
-                const currentDistY = myP.Y - other.Y;
-
-                if (Math.abs(currentDistX - idealDistX) < snapDistance &&
-                    Math.abs(currentDistY - idealDistY) < snapDistance) {
-
-                    mergeGroups(myP, other);
-                    merged = true;
-                    break;
-                }
-            }
-        }
-        if (merged) break;
+    if (ev.key.toLowerCase() === 'e') { // 右回転
+        rotateGroup(movingPiece, 1);
+    } else if (ev.key.toLowerCase() === 'q') { // 左回転
+        rotateGroup(movingPiece, -1);
     }
-
-    // --- 2. 盤面への正解位置吸着 ---
-    if (!merged) {
-        // 【追加】向きが正しくない(0度でない)場合は盤面に吸着させない
-        if (movingPiece.Rotation === 0) {
-            const distToGoalX = Math.abs(movingPiece.X - movingPiece.OriginalCol * pieceSize);
-            const distToGoalY = Math.abs(movingPiece.Y - movingPiece.OriginalRow * pieceSize);
-
-            if (distToGoalX < snapDistance && distToGoalY < snapDistance) {
-                snapGroupToBoard(movingPiece);
-            }
-        }
-    }
-
-    // --- 後処理 ---
-    movingPiece.group.forEach(p => {
-        p.scale = 1;
-        p.shadow = false;
-    });
-
-    movingPiece = null;
-    drawAll();
-    check();
 });
 
-// --- 回転操作（ダブルクリック） ---
+// ダブルクリック回転
 window.addEventListener('dblclick', (ev) => {
     const rect = can.getBoundingClientRect();
     const clickX = ev.clientX - rect.left;
@@ -535,16 +378,177 @@ window.addEventListener('dblclick', (ev) => {
 
     // ロックされていないピースをダブルクリックしたら回転
     if (clickedPiece && !clickedPiece.IsLocked) {
-        // グループ全員の回転角度を進める
-        clickedPiece.group.forEach(p => {
-            p.Rotation = (p.Rotation + 1) % 4; // 0->1->2->3->0...
-        });
-
+        rotateGroup(clickedPiece, 1); // 右回転
         drawAll();
-        // 回転によって偶然正解位置にはまる可能性があるのでチェック
         check();
     }
 });
+
+// --- シャッフル ---
+function shuffleInitial() {
+    if (!pieces || pieces.length === 0) return;
+    const shuffleAreaStartX = colMax * pieceSize + pieceSize / 2;
+    const shuffleAreaStartY = pieceSize / 2;
+    const shuffleAreaWidth = can.width - shuffleAreaStartX - pieceSize;
+    const shuffleAreaHeight = can.height - shuffleAreaStartY - pieceSize;
+
+    pieces.forEach(piece => {
+        piece.X = shuffleAreaStartX + Math.random() * (shuffleAreaWidth - pieceSize);
+        piece.Y = shuffleAreaStartY + Math.random() * (shuffleAreaHeight - pieceSize);
+        piece.Rotation = Math.floor(Math.random() * 4);
+        piece.visualRotation = piece.Rotation; // 初期状態は即時反映
+        piece.IsLocked = false;
+        piece.scale = 1;
+        piece.shadow = false;
+        piece.group = [piece];
+    });
+}
+
+// --- 描画 ---
+let movingPiece = null;
+let oldX = 0, oldY = 0;
+
+function drawAll() {
+    ctx.clearRect(0, 0, can.width, can.height);
+    let s = pieceSize / 4;
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(s, s, pieceSize * colMax, pieceSize * rowMax);
+    pieces.forEach(p => { if (p !== movingPiece) p.Draw(); });
+    if (movingPiece) movingPiece.Draw();
+}
+
+// アニメーションループ開始
+requestAnimationFrame(update);
+
+
+let mouseStartX = 0;
+let mouseStartY = 0;
+
+// ★ マウス操作の変更: クリックで掴み、クリックで離す (Sticky Grab)
+window.addEventListener('mousedown', (ev) => {
+    if (ev.button !== 0) return;
+    const rect = can.getBoundingClientRect();
+    const clickX = ev.clientX - rect.left;
+    const clickY = ev.clientY - rect.top;
+
+    if (movingPiece) {
+        // --- 既に掴んでいる場合 -> 離す (Drop処理) ---
+        handleDrop();
+    } else {
+        // --- 掴んでいない場合 -> 掴む (Pickup処理) ---
+        // クリックされたピースを探す
+        let clickedPiece = null;
+        for (let i = pieces.length - 1; i >= 0; i--) {
+            if (pieces[i].IsClick(clickX, clickY)) {
+                clickedPiece = pieces[i];
+                break;
+            }
+        }
+
+        if (!clickedPiece || clickedPiece.IsLocked) return;
+
+        movingPiece = clickedPiece;
+        mouseStartX = clickX; // 相対移動用
+        mouseStartY = clickY;
+
+        // グループ全体をドラッグ開始状態にする
+        movingPiece.group.forEach(p => {
+            p.startX = p.X;
+            p.startY = p.Y;
+            p.scale = 1.05;
+            p.shadow = true;
+
+            // 最前面へ
+            const idx = pieces.indexOf(p);
+            if (idx > -1) {
+                pieces.splice(idx, 1);
+                pieces.push(p);
+            }
+        });
+    }
+});
+
+// マウス移動
+window.addEventListener('mousemove', (ev) => {
+    if (!movingPiece) return;
+    const rect = can.getBoundingClientRect();
+    const currentX = ev.clientX - rect.left;
+    const currentY = ev.clientY - rect.top;
+
+    // 前回のクリック位置(mouseStartX)からの差分を足す
+    // ★Sticky Grabの場合、mouseStartXは「掴んだ瞬間のマウス位置」
+    // ここでリアルタイムに更新しないと「前回フレームからの差分」にならない
+    // しかし上記のロジック(startX + dx)は「掴んだ位置からの差分」なので、
+    // mouseMove中は mouseStartX を更新してはいけない。
+
+    const dx = currentX - mouseStartX;
+    const dy = currentY - mouseStartY;
+
+    movingPiece.group.forEach(p => {
+        p.X = p.startX + dx;
+        p.Y = p.startY + dy;
+    });
+
+    // 画面外制限
+    const maxX = can.width - pieceSize * 1.5;
+    const maxY = can.height - pieceSize * 1.5;
+    if (movingPiece.X < 0) movingPiece.X = 0;
+    if (movingPiece.Y < 0) movingPiece.Y = 0;
+    if (movingPiece.X > maxX) movingPiece.X = maxX;
+    if (movingPiece.Y > maxY) movingPiece.Y = maxY;
+});
+
+// ★離す処理（共通化）
+function handleDrop() {
+    if (!movingPiece) return;
+
+    const snapDistance = pieceSize / 3;
+    let merged = false;
+
+    // 1. 結合判定
+    for (const other of pieces) {
+        if (movingPiece.group.includes(other)) continue;
+        if (movingPiece.Rotation !== other.Rotation) continue;
+
+        for (const myP of movingPiece.group) {
+            const isNeighbor = (Math.abs(myP.OriginalCol - other.OriginalCol) + Math.abs(myP.OriginalRow - other.OriginalRow) === 1);
+            if (isNeighbor) {
+                const idealDistX = (myP.OriginalCol - other.OriginalCol) * pieceSize;
+                const idealDistY = (myP.OriginalRow - other.OriginalRow) * pieceSize;
+                const currentDistX = myP.X - other.X;
+                const currentDistY = myP.Y - other.Y;
+
+                if (Math.abs(currentDistX - idealDistX) < snapDistance &&
+                    Math.abs(currentDistY - idealDistY) < snapDistance) {
+                    mergeGroups(myP, other);
+                    merged = true;
+                    break;
+                }
+            }
+        }
+        if (merged) break; // グループの誰かが結合したら終了
+    }
+
+    // 2. 盤面吸着
+    if (!merged && movingPiece.Rotation === 0) {
+        const distToGoalX = Math.abs(movingPiece.X - movingPiece.OriginalCol * pieceSize);
+        const distToGoalY = Math.abs(movingPiece.Y - movingPiece.OriginalRow * pieceSize);
+        if (distToGoalX < snapDistance && distToGoalY < snapDistance) {
+            snapGroupToBoard(movingPiece);
+        }
+    }
+
+    // 後処理
+    movingPiece.group.forEach(p => {
+        p.scale = 1;
+        p.shadow = false;
+    });
+    movingPiece = null;
+    check();
+}
+
+// (旧リスナー削除済み)
 
 // --- 結合処理用関数 ---
 
@@ -608,8 +612,13 @@ function check() {
             saveGame();
         }
 
-        setTimeout(() => {
-            alert(`パズル完成！タイム: ${time} 秒`);
-        }, 600);
+        if (typeof showCompletionUI === 'function') {
+            showCompletionUI(time);
+        } else {
+            // Fallback
+            setTimeout(() => {
+                alert(`パズル完成！タイム: ${time} 秒`);
+            }, 600);
+        }
     }
 }

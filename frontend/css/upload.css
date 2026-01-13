@@ -1,113 +1,77 @@
-/* --- 基本レイアウト --- */
+/* --- 基本レイアウト (Login Style) --- */
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Comic Sans MS', sans-serif;
+    /* 親しみやすいフォント */
     text-align: center;
     padding: 20px;
     margin: 0;
+    min-height: 100vh;
+    box-sizing: border-box;
 
-    /* スクロール可能にする */
-    height: auto;
-    overflow-y: auto;
+    /* Login Page Background */
+    background-color: #e0f7fa;
+    background-image: repeating-linear-gradient(45deg,
+            #b2ebf2,
+            #b2ebf2 20px,
+            #80deea 20px,
+            #80deea 40px);
 
-    /* 下地の優しいグラデ（見やすさ重視）*/
-    background: radial-gradient(#f9f9f9 10%, #e6e6e6 11%) 0 0,
-        radial-gradient(#f9f9f9 10%, #e6e6e6 11%) 20px 20px;
-    background-size: 40px 40px;
-    position: relative;
-    /* ::before の基準にする */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
-/* --- アニメーションするジグソーパズルピース（固定表示） --- */
-/* position: fixed にすることで、ページをスクロールしても常に画面全体を覆い、アニメーションが見えるようにする */
-body::before {
-    content: "";
-    position: fixed;
-    /* ここを fixed に */
-    inset: 0;
-    /* 画面全体に広げる */
-    pointer-events: none;
-    /* 背景なのでマウスイベントを受けない */
-    background-image: url("https://upload.wikimedia.org/wikipedia/commons/6/6b/Jigsaw_Puzzle_Piece_Blue.svg");
-    background-repeat: repeat;
-    background-size: 120px 120px;
-    /* ピースの大きさ */
-    opacity: 0.12;
-    /* 見やすさに応じて調整 */
-    z-index: 0;
-    /* コンテンツより下に配置する（後述の要素で z-index:1 に）*/
-    will-change: background-position;
-    /* パフォーマンスヒント */
-    animation: puzzleDrift 22s linear infinite;
-    /* アニメーション適用 */
-}
-
-/* コンテンツを前面に出す（body::before の z-index が 0 のため） */
-#controls,
-h1,
-#can {
-    position: relative;
-    z-index: 1;
-}
-
-/* パズルピースがはっきり動くように、変化量を大きめに設定 */
-@keyframes puzzleDrift {
-    0% {
-        background-position: 0px 0px;
-    }
-
-    25% {
-        background-position: 200px 80px;
-    }
-
-    50% {
-        background-position: 40px 200px;
-    }
-
-    75% {
-        background-position: -160px 60px;
-    }
-
-    100% {
-        background-position: 0px 0px;
-    }
-}
-
-/* --- その他 UI スタイル（既存の見た目維持＋少し調整） --- */
-h1 {
-    color: #333;
-    text-shadow: 1px 1px 3px #fff;
-}
-
+/* --- コンテナ風スタイル (#controls) --- */
 #controls {
-    margin-top: 20px;
-    background: rgba(255, 255, 255, 0.92);
-    border-radius: 12px;
+    margin-bottom: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 30px;
+    border-radius: 25px;
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
     display: inline-block;
-    padding: 14px 22px;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    max-width: 800px;
     backdrop-filter: blur(4px);
+}
+
+h1 {
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    color: #333;
+    text-shadow: none;
+    margin-bottom: 20px;
+    font-size: 2rem;
 }
 
 #time {
     font-weight: bold;
     margin-left: 10px;
+    font-size: 1.2rem;
+    color: #d35400;
 }
 
 button {
-    padding: 6px 14px;
+    padding: 10px 20px;
     margin: 0 5px;
-    font-size: 16px;
-    background-color: #6ca0dc;
+    font-size: 1rem;
+    background-color: #ffb347;
+    /* Login Orange */
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: 12px;
     cursor: pointer;
-    transition: transform 0.18s, background-color 0.2s;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s;
 }
 
 button:hover {
     transform: translateY(-2px);
-    background-color: #588cca;
+    background-color: #ff7e5f;
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* アニメーション背景の削除 (body::before) */
+/* 以前のアニメーションは削除してもOKですが、念のため非表示にします */
+body::before {
+    display: none;
 }
 
 #can {
@@ -153,4 +117,56 @@ button:hover {
     left: 20px;
     z-index: 1000;
     padding: 5px 10px;
+}
+
+/* --- Inline CSS moved from HTML --- */
+/* 完成図のドラッグ移動用スタイル */
+#completedImagePreview {
+    position: fixed;
+    /* 画面上に固定（スクロールしても追従） */
+    top: 60px;
+    /* 初期位置 Y */
+    left: 20px;
+    /* 初期位置 X */
+    z-index: 1000;
+    /* パズルより手前に表示 */
+    cursor: grab;
+    /* カーソルを「掴む手」に */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    /* 影をつけて浮いている感を出す */
+    border: 4px solid #fff;
+    /* 白枠 */
+    border-radius: 4px;
+    max-width: 300px;
+    /* 最大サイズ制限 */
+    display: none;
+    /* 初期状態は非表示（JSで制御） */
+    user-select: none;
+    /* 選択不可にする */
+}
+
+#completedImagePreview:active {
+    cursor: grabbing;
+    /* ドラッグ中は「掴んでいる手」に */
+}
+
+/* #toggleCompletedBtn Override/Adjustment if needed */
+/* #toggleCompletedBtn Override/Adjustment if needed */
+/* ボタン列の中に配置するため、固定配置は削除してデフォルトに戻す */
+#toggleCompletedBtn {
+    position: static;
+    /* 固定解除 */
+    z-index: auto;
+    padding: 10px 20px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    /* 他のボタンに合わせる */
+}
+
+#can {
+    display: block;
+    background-color: #ddd;
+    /* パズルエリアの背景色 */
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.1);
+    margin-top: 10px;
 }

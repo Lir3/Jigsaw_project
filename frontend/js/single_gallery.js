@@ -11,6 +11,8 @@ if (!userId) {
     loadGallery();
 }
 
+
+
 /**
  * ギャラリー画面にパズルマスターとプレイ履歴を表示する
  */
@@ -40,25 +42,53 @@ async function loadGallery() {
     }
 
     // 2. 履歴取得 (つづきから遊ぶ)
+    // 2. 履歴取得 (つづきから遊ぶ)
     try {
-        const historyRes = await fetch(`${API_BASE_URL}/puzzle/history/${userId}`);
+        // 並行してベストタイムも取得
+        const [historyRes, bestsRes] = await Promise.all([
+            fetch(`${API_BASE_URL}/puzzle/history/${userId}`),
+            fetch(`${API_BASE_URL}/puzzle/best_times/${userId}`)
+        ]);
+
         const history = await historyRes.json();
+        const bests = await bestsRes.json();
 
         if (history.length === 0) {
             historyList.innerHTML = "<p>プレイ履歴はありません</p>";
         } else {
-            historyList.innerHTML = history.map(h => `
+            historyList.innerHTML = history.map(h => {
+                const diff = h.difficulty || 'normal';
+                const key = `${h.puzzle_id}_${diff}`;
+                const localKey = `best_time_${key}`;
+
+                // APIのベストタイムとLocalStorageのベストタイムを比較して良い方を採用
+                let bestTimeVal = bests[key];
+                const localBest = localStorage.getItem(localKey);
+
+                if (localBest) {
+                    const lb = parseInt(localBest);
+                    if (bestTimeVal === undefined || lb < bestTimeVal) {
+                        bestTimeVal = lb;
+                    }
+                }
+
+                const bestTimeDisplay = bestTimeVal !== undefined ? `${bestTimeVal}秒` : '-';
+
+                return `
                 <div class="card">
                     <div onclick="resumeGame('${h.id}')">
                         <img src="${h.puzzle_masters.image_url}" alt="puzzle">
                         <h3>${h.puzzle_masters.title}</h3>
-                        <p>Time: ${h.elapsed_time}s</p>
-                        <p>${h.is_completed ? "★ Clear" : "Playing"}</p>
-                        <small>${new Date(h.updated_at).toLocaleDateString()}</small>
+                        <div class="card-info">
+                            <p><span class="label">難易度:</span> ${formatDifficulty(h.difficulty)}</p>
+                            <p><span class="label">Best:</span> <span style="color:#e91e63; font-weight:bold;">${bestTimeDisplay}</span></p>
+                            <p><span class="label">タイマー:</span> ${h.elapsed_time}秒</p>
+                            <p><span class="label">日付:</span> ${new Date(h.updated_at).toLocaleDateString()}</p>
+                        </div>
                     </div>
                     <button class="btn-delete" onclick="event.stopPropagation(); deleteSession('${h.id}')">削除</button>
                 </div>
-            `).join('');
+            `}).join('');
         }
     } catch (error) {
         console.error("プレイ履歴の取得に失敗:", error);
@@ -70,12 +100,34 @@ async function loadGallery() {
  * 新規ゲームを開始し、セッションを作成する
  * @param {number} puzzleId - 選択されたパズルマスターID
  */
-async function startNewGame(puzzleId) {
+/**
+ * 新規ゲームを開始し、セッションを作成する
+ * @param {number} puzzleId - 選択されたパズルマスターID
+ */
+let currentPuzzleId = null; // モーダルで選択中のパズルID用
+
+function startNewGame(puzzleId) {
+    currentPuzzleId = puzzleId;
+    document.getElementById('difficultyModal').style.display = "block"; // モーダル表示
+}
+
+function closeModal() {
+    document.getElementById('difficultyModal').style.display = "none";
+    currentPuzzleId = null;
+}
+
+async function confirmStartGame() {
+    if (!currentPuzzleId) return;
+
+    // 難易度を取得して保存
+    const difficulty = document.getElementById('modalDifficultySelect').value;
+    localStorage.setItem('puzzleDifficulty', difficulty);
+
     try {
         const res = await fetch(`${API_BASE_URL}/puzzle/session`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: userId, puzzle_id: puzzleId })
+            body: JSON.stringify({ user_id: userId, puzzle_id: currentPuzzleId })
         });
         const session = await res.json();
         // セッションIDを持ってプレイ画面へ移動
@@ -83,6 +135,7 @@ async function startNewGame(puzzleId) {
     } catch (error) {
         console.error("新規セッションの作成に失敗:", error);
         alert("新規ゲームの開始に失敗しました。");
+        closeModal();
     }
 }
 
@@ -218,4 +271,11 @@ function renderGallery(puzzles) {
             </div>
         </div>
     `).join('');
+}
+
+function formatDifficulty(diff) {
+    if (!diff) return '普通'; // データがない場合はデフォルト
+    if (diff === 'easy') return '簡単';
+    if (diff === 'hard') return '難しい';
+    return '普通';
 }

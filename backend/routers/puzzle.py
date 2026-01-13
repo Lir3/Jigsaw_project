@@ -24,6 +24,7 @@ class SaveSessionRequest(BaseModel):
 class CreateSessionRequest(BaseModel):
     user_id: str
     puzzle_id: int
+    difficulty: str = "normal"  # デフォルト値を設定
 
 # --- API エンドポイント ---
 
@@ -43,10 +44,59 @@ def get_user_history(user_id: str):
 
 @router.post("/session")
 def create_session(req: CreateSessionRequest):
-    session_data = {"user_id": req.user_id, "puzzle_id": req.puzzle_id, "elapsed_time": 0}
+    # 難易度も保存する
+    session_data = {
+        "user_id": req.user_id, 
+        "puzzle_id": req.puzzle_id, 
+        "difficulty": req.difficulty,
+        "elapsed_time": 0
+    }
     res = supabase.table("single_sessions").insert(session_data).execute()
     if not res.data: raise HTTPException(status_code=500, detail="Failed to create session")
+    if not res.data: raise HTTPException(status_code=500, detail="Failed to create session")
     return res.data[0]
+
+@router.get("/best")
+def get_best_time(user_id: str, puzzle_id: int, difficulty: str):
+    # 自己ベスト（最短時間）を取得
+    res = supabase.table("single_sessions")\
+        .select("elapsed_time")\
+        .eq("user_id", user_id)\
+        .eq("puzzle_id", puzzle_id)\
+        .eq("difficulty", difficulty)\
+        .eq("is_completed", True)\
+        .order("elapsed_time", desc=False)\
+        .limit(1)\
+        .execute()
+    
+    if res.data and len(res.data) > 0:
+        return {"best_time": res.data[0]["elapsed_time"]}
+    if res.data and len(res.data) > 0:
+        return {"best_time": res.data[0]["elapsed_time"]}
+    else:
+        return {"best_time": None}
+
+@router.get("/best_times/{user_id}")
+def get_user_best_times(user_id: str):
+    # ユーザーの全完了データを取得して、パズル・難易度ごとのベストタイムを算出
+    res = supabase.table("single_sessions")\
+        .select("puzzle_id, difficulty, elapsed_time")\
+        .eq("user_id", user_id)\
+        .eq("is_completed", True)\
+        .execute()
+    
+    bests = {}
+    for item in res.data:
+        # キーを一意にする (puzzle_id + difficulty)
+        # default difficulty handling if needed
+        diff = item.get('difficulty') or 'normal' 
+        key = f"{item['puzzle_id']}_{diff}"
+        
+        time = item['elapsed_time']
+        if key not in bests or time < bests[key]:
+            bests[key] = time
+            
+    return bests
 
 @router.get("/session/{session_id}")
 def load_session(session_id: str):
@@ -80,6 +130,37 @@ def save_session(session_id: str, req: SaveSessionRequest):
                 "is_locked": p.is_locked, "group_id": p.group_id
             })
         supabase.table("single_session_pieces").upsert(pieces_data).execute()
+
+    # 3. ベストタイム更新 (クリア時のみ)
+    if req.is_completed:
+        # セッションからパズルIDと難易度を取得
+        current_session = supabase.table("single_sessions").select("puzzle_id, difficulty").eq("id", session_id).single().execute()
+        if current_session.data:
+            p_id = current_session.data['puzzle_id']
+            diff = current_session.data['difficulty'] or 'normal'
+            
+            # 現在のベストを取得
+            current_best_rec = supabase.table("user_best_records")\
+                .select("elapsed_time")\
+                .eq("user_id", req.user_id)\
+                .eq("puzzle_id", p_id)\
+                .eq("difficulty", diff)\
+                .single().execute()
+            
+            should_update = False
+            if not current_best_rec.data:
+                should_update = True # レコードなし
+            elif req.elapsed_time < current_best_rec.data['elapsed_time']:
+                should_update = True # 新記録
+            
+            if should_update:
+                supabase.table("user_best_records").upsert({
+                    "user_id": req.user_id,
+                    "puzzle_id": p_id,
+                    "difficulty": diff,
+                    "elapsed_time": req.elapsed_time,
+                    "updated_at": "now()"
+                }).execute()
 
     return {"status": "saved"}
 

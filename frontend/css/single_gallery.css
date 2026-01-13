@@ -1,48 +1,178 @@
+/* --- 背景 (Login Style) --- */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    min-height: 100vh;
+    background-color: #e0f7fa;
+    background-image: repeating-linear-gradient(45deg,
+            #b2ebf2,
+            #b2ebf2 20px,
+            #80deea 20px,
+            #80deea 40px);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    /* 縦長コンテンツ対応のため center ではなく flex-start */
+    padding: 40px;
+    box-sizing: border-box;
+}
+
+/* --- コンテナ --- */
+.container {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 40px;
+    border-radius: 25px;
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 900px;
+    /* カードが並ぶので少し広めに */
+}
+
 /* グリッドレイアウト */
 .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 20px;
-    padding: 20px;
+    padding: 10px;
 }
 
 /* カードのデザイン */
 .card {
     border: 1px solid #ddd;
-    border-radius: 10px;
-    padding: 10px;
+    border-radius: 12px;
+    padding: 15px;
     background: #fff;
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s;
     position: relative;
-    /* ボタン配置用 */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 .card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
 }
 
 .card img {
     width: 100%;
-    height: 150px;
+    height: 140px;
     object-fit: cover;
-    border-radius: 5px;
+    border-radius: 8px;
+    border: 1px solid #eee;
+    margin-bottom: 10px;
+}
+
+.card h3 {
+    margin: 5px 0 10px;
+    font-size: 1.1rem;
+    color: #444;
+}
+
+.card-info {
+    text-align: left;
+    font-size: 0.9rem;
+    color: #666;
+    background: #f9f9f9;
+    padding: 8px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+}
+
+.card-info p {
+    margin: 4px 0;
+    display: flex;
+    justify-content: space-between;
+}
+
+.card-info .label {
+    font-weight: bold;
+    color: #888;
 }
 
 /* 削除ボタンのスタイル */
+/* 削除ボタンのスタイル */
 .btn-delete {
-    background: #ff4444;
+    background: #ff6b6b;
+    /* 赤系だが少しマイルドに */
     color: white;
     border: none;
-    padding: 5px 12px;
-    border-radius: 4px;
+    padding: 8px 12px;
+    border-radius: 8px;
     cursor: pointer;
     margin-top: 10px;
     width: 100%;
-    /* カードの幅に合わせる */
+    font-size: 0.9rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
 }
 
 .btn-delete:hover {
-    background: #cc0000;
+    background: #ff5252;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* アップロードラベル（ボタン風） */
+.btn-upload {
+    display: inline-block;
+    padding: 12px 30px;
+    background-color: #ffb347;
+    /* Loginと同じオレンジ */
+    color: white;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+    user-select: none;
+}
+
+.btn-upload:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.3);
+    background-color: #ff7e5f;
+}
+
+h1,
+h2,
+h3 {
+    color: #333;
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    /* Loginと同じフォント */
+}
+
+/* --- モーダル (Difficulty Selection) --- */
+.modal {
+    display: none;
+    /* 初期状態は非表示 */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+    /* 半透明の黒背景 */
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: auto;
+    padding: 30px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 400px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    /* Flexboxで中央配置されるが、念のためmargin調整 */
+    position: relative;
+    top: 50%;
+    transform: translateY(-50%);
 }
