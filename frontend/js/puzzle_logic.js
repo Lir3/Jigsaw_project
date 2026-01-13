@@ -470,6 +470,7 @@ window.addEventListener('mousedown', (ev) => {
 });
 
 // マウス移動
+// マウス移動
 window.addEventListener('mousemove', (ev) => {
     if (!movingPiece) return;
     const rect = can.getBoundingClientRect();
@@ -477,26 +478,47 @@ window.addEventListener('mousemove', (ev) => {
     const currentY = ev.clientY - rect.top;
 
     // 前回のクリック位置(mouseStartX)からの差分を足す
-    // ★Sticky Grabの場合、mouseStartXは「掴んだ瞬間のマウス位置」
-    // ここでリアルタイムに更新しないと「前回フレームからの差分」にならない
-    // しかし上記のロジック(startX + dx)は「掴んだ位置からの差分」なので、
-    // mouseMove中は mouseStartX を更新してはいけない。
-
     const dx = currentX - mouseStartX;
     const dy = currentY - mouseStartY;
 
+    // 1. まず全員を仮移動させる
     movingPiece.group.forEach(p => {
         p.X = p.startX + dx;
         p.Y = p.startY + dy;
     });
 
-    // 画面外制限
+    // 2. グループ全体のはみ出しをチェックして補正値を計算
     const maxX = can.width - pieceSize * 1.5;
     const maxY = can.height - pieceSize * 1.5;
-    if (movingPiece.X < 0) movingPiece.X = 0;
-    if (movingPiece.Y < 0) movingPiece.Y = 0;
-    if (movingPiece.X > maxX) movingPiece.X = maxX;
-    if (movingPiece.Y > maxY) movingPiece.Y = maxY;
+
+    let correctionX = 0;
+    let correctionY = 0;
+
+    // グループ内の全ピースについてはみ出しをチェック
+    movingPiece.group.forEach(p => {
+        if (p.X < 0) {
+            // 左にはみ出た分だけ押し戻す（最も大きい補正値を採用）
+            if (0 - p.X > correctionX) correctionX = 0 - p.X;
+        }
+        if (p.Y < 0) {
+            if (0 - p.Y > correctionY) correctionY = 0 - p.Y;
+        }
+        if (p.X > maxX) {
+            // 右にはみ出た分だけ引き戻す (負の値)
+            if (maxX - p.X < correctionX) correctionX = maxX - p.X;
+        }
+        if (p.Y > maxY) {
+            if (maxY - p.Y < correctionY) correctionY = maxY - p.Y;
+        }
+    });
+
+    // 3. 補正値を全員に適用
+    if (correctionX !== 0 || correctionY !== 0) {
+        movingPiece.group.forEach(p => {
+            p.X += correctionX;
+            p.Y += correctionY;
+        });
+    }
 });
 
 // ★離す処理（共通化）
