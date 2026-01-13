@@ -132,10 +132,28 @@ async def upload_puzzle(user_id: str, file: UploadFile = File(...)):
 @router.delete("/{puzzle_id}")
 async def delete_puzzle(puzzle_id: int):
     # 関連するセッションやピースはDBの CASCADE 設定で消えるようにします
+    # ...が、DB側でCASCADE設定されていない場合のエラー回避のため、
+    # 明示的に関連データを削除してからパズルマスターを削除します。
+    
+    # セッション削除 (関連するピースはCascadeまたは個別削除が必要だが、まずはセッション消去)
+    supabase.table("single_sessions").delete().eq("puzzle_id", puzzle_id).execute()
+
     # まず画像URLを取得してStorageからも消す（任意）
     puzzle = supabase.table("puzzle_masters").select("image_url").eq("id", puzzle_id).single().execute()
     
     # DBから削除
     supabase.table("puzzle_masters").delete().eq("id", puzzle_id).execute()
     
+    return {"status": "deleted"}
+
+@router.delete("/session/{session_id}")
+async def delete_session(session_id: str):
+    # セッション削除（関連するピースはCascade設定があれば消えるが、念のため確認）
+    # Supabaseのテーブル定義で ON DELETE CASCADE になっていることを想定
+    res = supabase.table("single_sessions").delete().eq("id", session_id).execute()
+    
+    if not res.data:
+        # IDが見つからない場合など
+        raise HTTPException(status_code=404, detail="Session not found or already deleted")
+        
     return {"status": "deleted"}

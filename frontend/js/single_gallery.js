@@ -48,12 +48,15 @@ async function loadGallery() {
             historyList.innerHTML = "<p>プレイ履歴はありません</p>";
         } else {
             historyList.innerHTML = history.map(h => `
-                <div class="card" onclick="resumeGame('${h.id}')">
-                    <img src="${h.puzzle_masters.image_url}" alt="puzzle">
-                    <h3>${h.puzzle_masters.title}</h3>
-                    <p>Time: ${h.elapsed_time}s</p>
-                    <p>${h.is_completed ? "★ Clear" : "Playing"}</p>
-                    <small>${new Date(h.updated_at).toLocaleDateString()}</small>
+                <div class="card">
+                    <div onclick="resumeGame('${h.id}')">
+                        <img src="${h.puzzle_masters.image_url}" alt="puzzle">
+                        <h3>${h.puzzle_masters.title}</h3>
+                        <p>Time: ${h.elapsed_time}s</p>
+                        <p>${h.is_completed ? "★ Clear" : "Playing"}</p>
+                        <small>${new Date(h.updated_at).toLocaleDateString()}</small>
+                    </div>
+                    <button class="btn-delete" onclick="event.stopPropagation(); deleteSession('${h.id}')">削除</button>
                 </div>
             `).join('');
         }
@@ -172,6 +175,27 @@ async function deletePuzzle(puzzleId) {
         }
     } catch (error) {
         console.error("Error:", error);
+    }
+}
+
+// セッション削除関数
+async function deleteSession(sessionId) {
+    if (!confirm("このプレイ履歴を削除しますか？")) return;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/puzzle/session/${sessionId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            alert("履歴を削除しました");
+            location.reload(); // 画面を更新
+        } else {
+            alert("削除に失敗しました");
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        alert("通信エラーが発生しました");
     }
 }
 
