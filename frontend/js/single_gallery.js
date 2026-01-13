@@ -18,24 +18,28 @@ async function loadGallery() {
     const historyList = document.getElementById('history-list');
     const newList = document.getElementById('new-list');
 
-    // 1. パズルマスターデータ取得
+    // 1. パズルマスターデータ取得 (新しく始める)
     try {
         const mastersRes = await fetch(`${API_BASE_URL}/puzzle/masters`);
         const masters = await mastersRes.json();
 
+        // 修正ポイント：カード内に削除ボタンを追加し、onclickの伝搬を防ぐ
         newList.innerHTML = masters.map(m => `
-            <div class="card" onclick="startNewGame(${m.id})">
-                <img src="${m.image_url}" alt="${m.title}">
-                <h3>${m.title}</h3>
-                <p>Start New</p>
+            <div class="card">
+                <div onclick="startNewGame(${m.id})">
+                    <img src="${m.image_url}" alt="${m.title}">
+                    <h3>${m.title || "無題"}</h3>
+                    <p>Start New</p>
+                </div>
+                <button class="btn-delete" onclick="event.stopPropagation(); deletePuzzle(${m.id})">削除</button>
             </div>
         `).join('');
     } catch (error) {
         console.error("パズルマスターデータの取得に失敗:", error);
-        newList.innerHTML = "<p>パズルマスターデータの読み込み中にエラーが発生しました。</p>";
+        newList.innerHTML = "<p>読み込みエラーが発生しました。</p>";
     }
 
-    // 2. 履歴取得
+    // 2. 履歴取得 (つづきから遊ぶ)
     try {
         const historyRes = await fetch(`${API_BASE_URL}/puzzle/history/${userId}`);
         const history = await historyRes.json();
@@ -55,7 +59,7 @@ async function loadGallery() {
         }
     } catch (error) {
         console.error("プレイ履歴の取得に失敗:", error);
-        historyList.innerHTML = "<p>プレイ履歴の読み込み中にエラーが発生しました。</p>";
+        historyList.innerHTML = "<p>履歴の読み込みエラーが発生しました。</p>";
     }
 }
 
@@ -88,33 +92,106 @@ function resumeGame(sessionId) {
 }
 
 // アップロード処理
+// gallery.js 等、ギャラリーを描画している箇所
+// single_gallery.js
+
 async function handleUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
 
+    // Loading表示
+    const label = document.querySelector('.btn-upload');
+    const originalText = label.childNodes[0].textContent; // "新しい画像をアップロード" text node
+    label.childNodes[0].textContent = "アップロード中...";
+    label.style.pointerEvents = "none"; // 重複連打防止
+
     const formData = new FormData();
     formData.append("file", file);
 
-    const res = await fetch(`${API_BASE_URL}/puzzle/upload?user_id=${userId}`, {
-        method: "POST",
-        body: formData
-    });
+    try {
+        const res = await fetch(`${API_BASE_URL}/puzzle/upload?user_id=${userId}`, {
+            method: "POST",
+            body: formData
+        });
 
-    if (res.ok) {
-        alert("アップロード完了！");
-        location.reload(); // 再読み込みして反映
+        const result = await res.json();
+
+        if (res.ok) {
+            // 成功したらリストの先頭に追加
+            const newList = document.getElementById('new-list');
+            const m = result.puzzle;
+
+            const newCardHtml = `
+                <div class="card">
+                    <div onclick="startNewGame(${m.id})">
+                        <img src="${m.image_url}" alt="${m.title}">
+                        <h3>${m.title || "無題"}</h3>
+                        <p>Start New</p>
+                    </div>
+                    <button class="btn-delete" onclick="event.stopPropagation(); deletePuzzle(${m.id})">削除</button>
+                </div>
+            `;
+
+            // 既存のHTMLの前に追加
+            newList.insertAdjacentHTML('afterbegin', newCardHtml);
+
+            alert("アップロード完了！");
+        } else if (res.status === 401) {
+            alert("ユーザー情報が無効です。再度ログインしてください。");
+            localStorage.removeItem("user_id");
+            window.location.href = "/user/login";
+        } else {
+            alert("アップロード失敗: " + (result.message || "不明なエラー"));
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        alert("通信エラーが発生しました");
+    } finally {
+        // 元に戻す
+        label.childNodes[0].textContent = originalText;
+        label.style.pointerEvents = "auto";
+        // inputをリセット（同じファイルを再度選べるように）
+        event.target.value = '';
     }
 }
 
-// 削除処理
+// 削除実行関数
 async function deletePuzzle(puzzleId) {
-    if (!confirm("このパズルを削除しますか？（保存したデータも消えます）")) return;
+    if (!confirm("このパズルとプレイデータを全て削除しますか？")) return;
 
-    const res = await fetch(`${API_BASE_URL}/puzzle/${puzzleId}`, {
-        method: "DELETE"
-    });
+    try {
+        const response = await fetch(`${API_BASE_URL}/puzzle/${puzzleId}`, {
+            method: 'DELETE'
+        });
 
-    if (res.ok) {
-        location.reload();
+        if (response.ok) {
+            alert("削除しました");
+            location.reload(); // 画面を更新してギャラリーから消す
+        } else {
+            alert("削除に失敗しました");
+        }
+    } catch (error) {
+        console.error("Error:", error);
     }
+}
+
+function renderGallery(puzzles) {
+    const galleryGrid = document.getElementById('galleryGrid');
+    if (!galleryGrid) return;
+
+    // もし puzzles が配列でない（単一オブジェクトなど）場合は配列に包む
+    const puzzleArray = Array.isArray(puzzles) ? puzzles : [puzzles];
+
+    galleryGrid.innerHTML = puzzleArray.map(puzzle => `
+        <div class="puzzle-card">
+            <img src="${puzzle.image_url}" alt="${puzzle.title}">
+            <div class="puzzle-info">
+                <h3>${puzzle.title}</h3>
+                <div class="actions">
+                    <button onclick="playGame(${puzzle.id})">プレイ</button>
+                    <button class="delete-btn" onclick="deletePuzzle(${puzzle.id})">削除</button>
+                </div>
+            </div>
+        </div>
+    `).join('');
 }

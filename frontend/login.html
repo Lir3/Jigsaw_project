@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8">
   <title>ログイン</title>
@@ -40,16 +41,16 @@
       const formData = new FormData(e.target);
 
       try {
-        const res = await fetch("http://127.0.0.1:8000/user/login", {
+        const res = await fetch("/user/login", {
           method: "POST",
           body: formData
         });
         const data = await res.json();
 
         if (res.ok) {
-           localStorage.setItem("user_id", data.user_id);
-            localStorage.setItem("username", data.username);
-          　window.location.href = "/mode"; // モード選択画面へ
+          localStorage.setItem("user_id", data.user_id);
+          localStorage.setItem("username", data.username);
+          window.location.href = "/mode"; // モード選択画面へ
         } else {
           document.getElementById("result").innerText = data.detail;
         }
@@ -74,4 +75,5 @@
     });
   </script>
 </body>
+
 </html>

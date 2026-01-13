@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8">
   <title>ユーザー登録</title>
@@ -40,7 +41,7 @@
       const formData = new FormData(e.target);
 
       try {
-        const res = await fetch("http://127.0.0.1:8000/user/signup", {
+        const res = await fetch("/user/signup", {
           method: "POST",
           body: formData
         });
@@ -67,4 +68,5 @@
     });
   </script>
 </body>
+
 </html>

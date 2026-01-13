@@ -15,21 +15,15 @@
     <div class="upload-section">
         <label class="btn-upload">
             新しい画像をアップロード
-            <input type="file" accept="image/*" onchange="handleUpload(event)" style="display:none">
+            <input type="file" id="uploadInput" accept="image/*" onchange="handleUpload(event)" style="display:none">
         </label>
     </div>
 
-    <div class="puzzle-card">
-        <!-- <img src="IMAGE_URL_FROM_DB"> -->
-        <button onclick="deletePuzzle(PUZZLE_ID_FROM_DB)" class="btn-delete">削除</button>
-    </div>
-
-
-    <h2>つづきから遊ぶ</h2>
-    <div id="history-list" class="grid">Loading...</div>
+    <h2>つづきから遊ぶ（プレイ中）</h2>
+    <div id="history-list" class="grid"></div>
 
     <h2>新しく始める</h2>
-    <div id="new-list" class="grid">Loading...</div>
+    <div id="new-list" class="grid"></div>
 
     <script src="/static/js/single_gallery.js"></script>
 </body>

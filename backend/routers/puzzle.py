@@ -1,5 +1,5 @@
 # routers/puzzle.py
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from typing import List
 from database import supabase
@@ -82,3 +82,60 @@ def save_session(session_id: str, req: SaveSessionRequest):
         supabase.table("single_session_pieces").upsert(pieces_data).execute()
 
     return {"status": "saved"}
+
+@router.post("/upload")
+async def upload_puzzle(user_id: str, file: UploadFile = File(...)):
+    try:
+        # 1. 保存パスの作成
+        file_path = f"{user_id}/{file.filename}"
+        file_content = await file.read()
+        
+        # 2. Storage へのアップロード
+        supabase.storage.from_("puzzles").upload(
+            path=file_path,
+            file=file_content,
+            file_options={"content-type": file.content_type, "x-upsert": "true"}
+        )
+
+        # 3. 公開URLの取得
+        image_url = supabase.storage.from_("puzzles").get_public_url(file_path)
+        
+        # 4. puzzle_masters テーブルへ登録
+        # get_public_url は文字列(URL)を返す仕様だが、念のためstr変換
+        data = {
+            "user_id": user_id,
+            "image_url": str(image_url),
+            "title": file.filename
+        }
+        
+        db_res = supabase.table("puzzle_masters").insert(data).execute()
+        
+        return {"status": "success", "puzzle": db_res.data[0]}
+
+    except Exception as e:
+        # Supabase(PostgREST)からのエラーレスポンスを解析
+        # エラーメッセージが辞書型か文字列かなどで判定
+        error_msg = str(e)
+        
+        # 外部キー制約違反 (PostgreSQL Error Code 23503) を判定
+        # details属性やmessage内にコードが含まれる場合がある
+        if "23503" in error_msg or 'violates foreign key constraint "fk_user"' in error_msg:
+             print(f"User ID mismatch: {user_id}")
+             raise HTTPException(
+                 status_code=401, 
+                 detail="User not found. Please login again."
+             )
+
+        print(f"Upload Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/{puzzle_id}")
+async def delete_puzzle(puzzle_id: int):
+    # 関連するセッションやピースはDBの CASCADE 設定で消えるようにします
+    # まず画像URLを取得してStorageからも消す（任意）
+    puzzle = supabase.table("puzzle_masters").select("image_url").eq("id", puzzle_id).single().execute()
+    
+    # DBから削除
+    supabase.table("puzzle_masters").delete().eq("id", puzzle_id).execute()
+    
+    return {"status": "deleted"}
