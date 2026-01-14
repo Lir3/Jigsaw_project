@@ -83,3 +83,25 @@ toggleBtn.addEventListener('click', () => {
         toggleBtn.textContent = '完成図を見る';     // ボタンの文字変更（任意）
     }
 });
+
+// --- ゲーム初期化 (puzzle_logic.js を使用) ---
+window.addEventListener('load', async () => {
+    // puzzle_logic.js の initPuzzle があるか確認
+    if (typeof initPuzzle !== 'function') {
+        console.warn("initPuzzle function is not defined. puzzle_logic.js may not be loaded.");
+        return;
+    }
+
+    // アップロードされた画像があるか確認
+    const uploaded = localStorage.getItem('uploadedImage');
+    if (!uploaded) return;
+
+    // パズル初期化 (保存データは無いので null or [])
+    // ※ difficultyは puzzle_logic.js 内で localStorage から読み込まれる
+    console.log("Initializing puzzle via upload.js...");
+    try {
+        await initPuzzle(uploaded, null);
+    } catch (e) {
+        console.error("Error initializing puzzle:", e);
+    }
+});
