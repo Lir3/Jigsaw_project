@@ -84,7 +84,7 @@ class Piece {
 function startTimer() {
     if (timer) clearInterval(timer);
     $time.innerHTML = `${time}`;
-    $time.style.color = '#000';
+    $time.style.color = ''; // CSSに任せる
     timer = setInterval(() => {
         time++;
         $time.innerHTML = `${time}`;

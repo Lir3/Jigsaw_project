@@ -56,13 +56,13 @@ ws.onmessage = async (event) => {
 
         case "PLAYER_JOINED":
             // システムメッセージとして表示
-            addChatMessage('SYSTEM', `User ${msg.user_id} joined.`);
+            addChatMessage('SYSTEM', `${msg.username} joined.`, Date.now());
             if (msg.count) updateMemberCount(msg.count);
             break;
 
         case "PLAYER_LEFT":
             // システムメッセージとして表示
-            addChatMessage('SYSTEM', `User ${msg.user_id} left.`);
+            addChatMessage('SYSTEM', `${msg.username} left.`, Date.now());
             if (msg.count) updateMemberCount(msg.count);
             break;
 
