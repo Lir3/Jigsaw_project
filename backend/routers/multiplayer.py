@@ -365,45 +365,33 @@ async def puzzle_websocket(websocket: WebSocket, room_id: str, user_id: str):
     except WebSocketDisconnect:
         manager.disconnect(room_id, websocket, user_id)
         
-        # ホストが退出した場合、ルームを削除
+        # ホストが退出した場合、ルームを即座に閉じる
         is_host = (game_state.get_host(room_id) == user_id)
         
         if is_host:
-            # DBにルームが存在するか確認（リロード vs 本当の退出を区別）
+            print(f"Host {user_id} disconnected. Closing room {room_id}...")
+            # 全員に通知して切断を促す
+            await manager.broadcast(room_id, {
+                "type": "ROOM_CLOSED",
+                "message": "ホストが退出したためルームが解散されました"
+            })
+            
+            # データベースから削除
             try:
                 from .room import supabase
-                room_check = supabase.table("rooms").select("id").eq("id", room_id).execute()
-                
-                # ルームがDBに存在し、接続が0になった場合のみ削除
-                # （リロード中は一瞬0になるが、すぐ再接続するので削除しない）
-                if room_check.data and manager.get_member_count(room_id) == 0:
-                    # 少し待ってから再確認（リロードでの再接続を待つ）
-                    import asyncio
-                    await asyncio.sleep(2)
-                    
-                    # まだ誰もいなければ削除
-                    if manager.get_member_count(room_id) == 0:
-                        supabase.table("rooms").delete().eq("id", room_id).execute()
-                        print(f"Room {room_id} deleted (host {user_id} left)")
-                        
-                        await manager.broadcast(room_id, {
-                            "type": "ROOM_CLOSED",
-                            "message": "ホストが退出したためルームが閉じられました"
-                        })
-                        
-                        game_state.cleanup_room(room_id)
-                else:
-                    # 通常の退出（ゲスト）
-                    count = manager.get_member_count(room_id)
-                    await manager.broadcast(room_id, {
-                        "type": "PLAYER_LEFT", 
-                        "user_id": user_id,
-                        "count": count
-                    })
+                supabase.table("rooms").delete().eq("id", room_id).execute()
             except Exception as e:
-                print(f"Error handling disconnect: {e}")
+                print(f"Error deleting room from DB: {e}")
+
+            # メモリ上のルームデータを削除
+            game_state.cleanup_room(room_id)
+            
+            # 残っている接続を強制切断する処理があればここで実行したいが、
+            # ConnectionManager側で管理しているなら、broadcast後に接続を切る等の処理が必要かも。
+            # 今回はクライアント側で ROOM_CLOSED を受け取ったら退出するように実装済み。
+            
         else:
-            # 通常の退出
+            # 通常の退出（ゲスト）
             count = manager.get_member_count(room_id)
             await manager.broadcast(room_id, {
                 "type": "PLAYER_LEFT", 

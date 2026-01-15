@@ -39,6 +39,9 @@ class Piece {
         this.visualRotation = 0; // ★表示用の回転角度 (補間用)
         this.startX = 0;
         this.startY = 0;
+
+        // 他人が操作中かどうかのフラグ
+        this.isHeldByOther = false;
     }
 
     Draw() {
@@ -456,7 +459,7 @@ window.addEventListener('mousedown', (ev) => {
             }
         }
 
-        if (!clickedPiece || clickedPiece.IsLocked) return;
+        if (!clickedPiece || clickedPiece.IsLocked || clickedPiece.isHeldByOther) return;
 
         movingPiece = clickedPiece;
         mouseStartX = clickX; // 相対移動用

@@ -257,3 +257,49 @@ function backToGallery() {
         window.location.href = "/single/gallery";
     });
 }
+
+// --- 完成図ON/OFF機能 (シングルプレイ用) ---
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleBtn = document.getElementById('toggleCompletedBtn');
+    const previewImgElement = document.getElementById('completedImagePreview');
+
+    if (toggleBtn && previewImgElement) {
+        toggleBtn.addEventListener('click', () => {
+            if (previewImgElement.style.display === 'none' || previewImgElement.style.display === '') {
+                previewImgElement.style.display = 'block';
+                toggleBtn.textContent = '完成図を隠す';
+            } else {
+                previewImgElement.style.display = 'none';
+                toggleBtn.textContent = '完成図を見る';
+            }
+        });
+
+        // ドラッグ機能も有効化
+        enableImageDrag(previewImgElement);
+    }
+});
+
+// 完成図ドラッグ機能
+function enableImageDrag(imgElement) {
+    let isDragging = false;
+    let offsetX, offsetY;
+
+    imgElement.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        isDragging = true;
+        const rect = imgElement.getBoundingClientRect();
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+        e.preventDefault();
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        imgElement.style.left = `${e.clientX - offsetX}px`;
+        imgElement.style.top = `${e.clientY - offsetY}px`;
+    });
+
+    window.addEventListener('mouseup', () => {
+        isDragging = false;
+    });
+}

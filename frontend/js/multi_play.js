@@ -55,12 +55,14 @@ ws.onmessage = async (event) => {
             break;
 
         case "PLAYER_JOINED":
-            addLog(`User ${msg.user_id} joined.`);
+            // システムメッセージとして表示
+            addChatMessage('SYSTEM', `User ${msg.user_id} joined.`);
             if (msg.count) updateMemberCount(msg.count);
             break;
 
         case "PLAYER_LEFT":
-            addLog(`User ${msg.user_id} left.`);
+            // システムメッセージとして表示
+            addChatMessage('SYSTEM', `User ${msg.user_id} left.`);
             if (msg.count) updateMemberCount(msg.count);
             break;
 
@@ -308,16 +310,11 @@ function handleRemoteLock(msg) {
     const p = pieces.find(item => item.originalIndex === msg.index);
     if (p) {
         // 他人が操作中
-        p.IsLocked = true; // ローカルでロック扱いにすれば触れない
-        // 視覚的表現（半透明など）
-        // puzzle_logic.js の Draw で IsLocked なら半透明にする処理があると良いが、
-        // 今の IsLocked は「盤面に固定」の意味で使われている...！
-
-        // ★重要: `IsLocked` は "Snap to board" (完了) の意味で使われている。
-        // "Being dragged by other" は別のフラグが必要。
         p.isHeldByOther = true;
 
-        // Draw関数を修正するか、ここだけ上書き描画するか。
+        // 視覚的表現（半透明など）
+        // 必要ならここで色を変えるなどの処理を追加
+
         drawAll();
     }
 }
@@ -479,6 +476,52 @@ function addChatMessage(userId, message, timestamp, username) {
 
     messagesDiv.appendChild(messageDiv);
     messagesDiv.scrollTop = messagesDiv.scrollHeight; // 自動スクロール
+}
+
+// --- 完成図ON/OFF機能 (マルチプレイ用) ---
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleBtn = document.getElementById('toggleCompletedBtn');
+    const previewImgElement = document.getElementById('completedImagePreview');
+
+    if (toggleBtn && previewImgElement) {
+        toggleBtn.addEventListener('click', () => {
+            if (previewImgElement.style.display === 'none' || previewImgElement.style.display === '') {
+                previewImgElement.style.display = 'block';
+                toggleBtn.textContent = '完成図を隠す';
+            } else {
+                previewImgElement.style.display = 'none';
+                toggleBtn.textContent = '完成図を見る';
+            }
+        });
+
+        // ドラッグ機能も有効化
+        enableImageDrag(previewImgElement);
+    }
+});
+
+// 完成図ドラッグ機能（共通化できればベストだが簡易的にここに記載）
+function enableImageDrag(imgElement) {
+    let isDragging = false;
+    let offsetX, offsetY;
+
+    imgElement.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        isDragging = true;
+        const rect = imgElement.getBoundingClientRect();
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+        e.preventDefault();
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        imgElement.style.left = `${e.clientX - offsetX}px`;
+        imgElement.style.top = `${e.clientY - offsetY}px`;
+    });
+
+    window.addEventListener('mouseup', () => {
+        isDragging = false;
+    });
 }
 
 function escapeHtml(text) {
