@@ -98,14 +98,16 @@ function stopTimer() {
     }
 }
 
-async function initPuzzle(imageUrl, savedPiecesData) {
+async function initPuzzle(imageUrl, savedPiecesData, difficultyArg) {
     if (!can) return;
 
-    // 難易度
-    const difficulty = localStorage.getItem('puzzleDifficulty') || 'normal';
+    // 難易度 (引数優先 -> LocalStorage -> Default)
+    const difficulty = difficultyArg || localStorage.getItem('puzzleDifficulty') || 'normal';
+
     let basePieceCount = 6; // 短い辺の基準分割数
     if (difficulty === 'easy') basePieceCount = 4;
     else if (difficulty === 'hard') basePieceCount = 8;
+    else if (difficulty === 'expert') basePieceCount = 10; // Expert追加
 
     // 画像読み込み
     const sourceImage = await createSourceImage(imageUrl);

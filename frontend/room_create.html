@@ -23,6 +23,14 @@
       <label>最大参加人数</label>
       <input type="number" name="max_players" min="2" max="8" required>
 
+      <label>難易度</label>
+      <select name="difficulty" required>
+        <option value="easy">Easy (4x4)</option>
+        <option value="normal" selected>Normal (6x6)</option>
+        <option value="hard">Hard (8x8)</option>
+        <option value="expert">Expert (10x10)</option>
+      </select>
+
       <label>パスワード（任意）</label>
       <input type="password" name="password">
 

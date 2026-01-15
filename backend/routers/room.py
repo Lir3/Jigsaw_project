@@ -9,6 +9,7 @@ router = APIRouter()
 def create_room(
     name: str = Form(...),
     max_players: int = Form(...),
+    difficulty: str = Form("normal"), # デフォルト値
     password: str = Form(None),
     current_user=Depends(get_current_user)
 ):
@@ -20,6 +21,7 @@ def create_room(
         "name": name,
         "host_user_id": current_user["id"],
         "max_players": max_players,
+        "difficulty": difficulty,
         "password": password
     }
 
@@ -39,8 +41,9 @@ def create_room(
 
 @router.get("/list")
 def get_rooms():
+    # difficultyも取得
     rooms_result = supabase.table("rooms").select(
-        "id, name, max_players, password"
+        "id, name, max_players, password, difficulty"
     ).execute()
 
     if not rooms_result.data:
@@ -62,6 +65,7 @@ def get_rooms():
             "name": room["name"],
             "max_players": room["max_players"],
             "current_players": current_players,
+            "difficulty": room.get("difficulty", "normal"),
             "has_password": bool(room["password"])
         })
 
@@ -95,7 +99,7 @@ def join_room(
 @router.get("/wait/info")
 def get_room_wait_info(room_id: str):
     room = supabase.table("rooms") \
-        .select("id, name") \
+        .select("id, name, difficulty") \
         .eq("id", room_id) \
         .single() \
         .execute()

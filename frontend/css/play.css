@@ -33,3 +33,33 @@ body {
     margin-left: 20px;
     font-weight: bold;
 }
+
+/* 完成図のドラッグ移動用スタイル */
+#completedImagePreview {
+    position: fixed;
+    /* 画面上に固定（スクロールしても追従） */
+    top: 60px;
+    /* 初期位置 Y */
+    left: 20px;
+    /* 初期位置 X */
+    z-index: 1000;
+    /* パズルより手前に表示 */
+    cursor: grab;
+    /* カーソルを「掴む手」に */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    /* 影をつけて浮いている感を出す */
+    border: 4px solid #fff;
+    /* 白枠 */
+    border-radius: 4px;
+    max-width: 300px;
+    /* 最大サイズ制限 */
+    display: none;
+    /* 初期状態は非表示（JSで制御） */
+    user-select: none;
+    /* 選択不可にする */
+}
+
+#completedImagePreview:active {
+    cursor: grabbing;
+    /* ドラッグ中は「掴んでいる手」に */
+}

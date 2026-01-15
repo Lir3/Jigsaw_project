@@ -61,8 +61,12 @@ class GameStateManager:
         self.room_images: Dict[str, str] = {}
         # room_id -> start_timestamp (タイマー同期用)
         self.room_start_times: Dict[str, int] = {}
+        # room_id -> start_timestamp (タイマー同期用)
+        self.room_start_times: Dict[str, int] = {}
         # room_id -> host_user_id (ホスト管理用)
         self.room_hosts: Dict[str, str] = {}
+        # room_id -> difficulty (同期用)
+        self.room_difficulties: Dict[str, str] = {}
 
     def init_room(self, room_id: str, host_user_id: str = None):
         if room_id not in self.game_states:
@@ -145,6 +149,12 @@ class GameStateManager:
              
         return True
 
+    def set_difficulty(self, room_id: str, difficulty: str):
+        self.room_difficulties[room_id] = difficulty
+
+    def get_difficulty(self, room_id: str):
+        return self.room_difficulties.get(room_id, "normal")
+
     def unlock_piece(self, room_id: str, index: int, user_id: str):
         state = self.game_states.get(room_id, {})
         piece = state.get(index)
@@ -188,8 +198,13 @@ async def puzzle_websocket(websocket: WebSocket, room_id: str, user_id: str):
     # DBからルーム情報を取得してホストを特定
     from .room import supabase
     try:
-        room_data = supabase.table("rooms").select("host_user_id").eq("id", room_id).single().execute()
+        room_data = supabase.table("rooms").select("host_user_id, difficulty").eq("id", room_id).single().execute()
         creator_id = room_data.data.get("host_user_id") if room_data.data else None
+        
+        # 難易度を初期化時に保存
+        if room_data.data and room_data.data.get("difficulty"):
+            game_state.set_difficulty(room_id, room_data.data.get("difficulty"))
+            
         game_state.init_room(room_id, creator_id)  # DBのホストを使用
     except Exception as e:
         print(f"Error fetching room creator: {e}")
@@ -211,11 +226,27 @@ async def puzzle_websocket(websocket: WebSocket, room_id: str, user_id: str):
                 
                 # 他のメンバーに通知
                 count = manager.get_member_count(room_id)
+                # ユーザー名取得
+                from .user import supabase
+                try:
+                    user_data = supabase.table("users").select("username").eq("id", user_id).single().execute()
+                    username = user_data.data.get("username") if user_data.data else user_id[:8]
+                except:
+                    username = user_id[:8]
+                
                 await manager.broadcast(room_id, {
                     "type": "PLAYER_JOINED", 
                     "user_id": user_id,
+                    "username": username,
                     "count": count
                 })
+                
+                # 難易度情報を自分に送る（同期用）
+                difficulty = game_state.get_difficulty(room_id)
+                await websocket.send_text(json.dumps({
+                    "type": "ROOM_INFO",
+                    "difficulty": difficulty
+                }))
                 
                 # 現在の状態を送信（再接続時など）
                 # wait state or playing state
@@ -223,10 +254,13 @@ async def puzzle_websocket(websocket: WebSocket, room_id: str, user_id: str):
                     # ゲーム中なら現在のピース情報を送る
                     current_pieces = game_state.get_all_pieces(room_id)
                     start_time = game_state.get_start_time(room_id)
+                    start_time = game_state.get_start_time(room_id)
+                    difficulty = game_state.get_difficulty(room_id)
                     await websocket.send_text(json.dumps({
                         "type": "GAME_STARTED", # 途中参加でも STARTED と同じ扱いでOK
                         "pieces": current_pieces,
-                        "start_time": start_time  # タイマー同期用
+                        "start_time": start_time,
+                        "difficulty": difficulty
                     }))
                 
                 # 画像が決まっていれば送る
@@ -393,8 +427,18 @@ async def puzzle_websocket(websocket: WebSocket, room_id: str, user_id: str):
         else:
             # 通常の退出（ゲスト）
             count = manager.get_member_count(room_id)
+            
+            # ユーザー名取得
+            from .user import supabase
+            try:
+                user_data = supabase.table("users").select("username").eq("id", user_id).single().execute()
+                username = user_data.data.get("username") if user_data.data else user_id[:8]
+            except:
+                username = user_id[:8]
+            
             await manager.broadcast(room_id, {
                 "type": "PLAYER_LEFT", 
                 "user_id": user_id,
+                "username": username,
                 "count": count
             })

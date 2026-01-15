@@ -66,6 +66,11 @@ ws.onmessage = async (event) => {
             if (msg.count) updateMemberCount(msg.count);
             break;
 
+        case "ROOM_INFO":
+            window.currentRoomDifficulty = msg.difficulty;
+            console.log("Room difficulty:", window.currentRoomDifficulty);
+            break;
+
         case "GAME_STARTED":
             // まだ初期化(画像ロード)が終わっていない場合は保留する
             if (!isPuzzleInitialized) {
@@ -93,7 +98,9 @@ ws.onmessage = async (event) => {
 
         case "IMAGE_SET":
             // 画像が決定した -> パズル初期化
-            await initPuzzle(msg.image_url, null);
+            // 難易度は ROOM_INFO で取得しているはずなのでそれを使う
+            // もし取得できていなければデフォルト
+            await initPuzzle(msg.image_url, null, window.currentRoomDifficulty);
             isPuzzleInitialized = true;
 
             // 待機中はタイマーを止める
