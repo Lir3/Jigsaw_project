@@ -1,31 +1,39 @@
 # routers/user.py
 from fastapi import APIRouter, Form, HTTPException
-from passlib.context import CryptContext
+import bcrypt
 from database import supabase
 import uuid
 
 router = APIRouter()
 
-# パスワードハッシュ用（bcryptを使用）
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
 # ✅ パスワードをハッシュ化
 def get_password_hash(password: str):
-
+    # bcryptはbytesを扱うためエンコード
+    pwd_bytes = password.encode('utf-8')
+    
     # 🔒 bcryptの72byte制限チェック
-    if len(password.encode("utf-8")) > 72:
+    if len(pwd_bytes) > 72:
         raise HTTPException(
             status_code=400,
             detail="パスワードは72バイト以内で入力してください"
         )
-
-    return pwd_context.hash(password)
+    
+    # ソルトを生成してハッシュ化
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(pwd_bytes, salt)
+    return hashed.decode('utf-8')
 
 
 # ✅ パスワード検証
 def verify_password(plain_password: str, hashed_password: str):
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        if not hashed_password: return False
+        return bcrypt.checkpw(
+            plain_password.encode('utf-8'), 
+            hashed_password.encode('utf-8')
+        )
+    except ValueError:
+        return False
 
 
 # ✅ ユーザー登録（サインアップ）

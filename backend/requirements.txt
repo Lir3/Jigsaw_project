@@ -3,6 +3,6 @@ uvicorn
 python-multipart
 python-dotenv
 supabase
-passlib[bcrypt]
+bcrypt
 pydantic
 websockets
