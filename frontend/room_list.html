@@ -22,7 +22,7 @@
   <script>
     async function fetchRooms() {
       try {
-        const res = await fetch("http://127.0.0.1:8000/room/list");
+        const res = await fetch("/room/list");
         const data = await res.json();
 
         const list = document.getElementById("roomList");
@@ -78,7 +78,7 @@
       form.append("room_id", roomId);
 
       try {
-        await fetch("http://127.0.0.1:8000/room/join", {
+        await fetch("/room/join", {
           method: "POST",
           headers: { "Authorization": userId },
           body: form
