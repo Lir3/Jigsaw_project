@@ -227,12 +227,17 @@ async def puzzle_websocket(websocket: WebSocket, room_id: str, user_id: str):
                 # 他のメンバーに通知
                 count = manager.get_member_count(room_id)
                 # ユーザー名取得
-                from .user import supabase
                 try:
+                    from .user import supabase
+                    # user_idが有効なUUIDかどうかチェックすべきだが、ここでは簡易的にDB参照
                     user_data = supabase.table("users").select("username").eq("id", user_id).single().execute()
-                    username = user_data.data.get("username") if user_data.data else user_id[:8]
-                except:
-                    username = user_id[:8]
+                    if user_data.data and user_data.data.get("username"):
+                         username = user_data.data.get("username")
+                    else:
+                         username = f"Guest_{user_id[:4]}"
+                except Exception as e:
+                    print(f"Username fetch error: {e}")
+                    username = f"Guest_{user_id[:4]}"
                 
                 await manager.broadcast(room_id, {
                     "type": "PLAYER_JOINED", 
@@ -380,9 +385,13 @@ async def puzzle_websocket(websocket: WebSocket, room_id: str, user_id: str):
                 from .user import supabase
                 try:
                     user_data = supabase.table("users").select("username").eq("id", user_id).single().execute()
-                    username = user_data.data.get("username") if user_data.data else user_id[:8]
-                except:
-                    username = user_id[:8]  # フォールバック
+                    if user_data.data and user_data.data.get("username"):
+                         username = user_data.data.get("username")
+                    else:
+                         username = f"Guest_{user_id[:4]}"
+                except Exception as e:
+                    print(f"Username fetch error (CHAT): {e}")
+                    username = f"Guest_{user_id[:4]}"
                 
                 import time
                 timestamp = int(time.time() * 1000)  # ミリ秒
@@ -429,12 +438,16 @@ async def puzzle_websocket(websocket: WebSocket, room_id: str, user_id: str):
             count = manager.get_member_count(room_id)
             
             # ユーザー名取得
-            from .user import supabase
             try:
+                from .user import supabase
                 user_data = supabase.table("users").select("username").eq("id", user_id).single().execute()
-                username = user_data.data.get("username") if user_data.data else user_id[:8]
-            except:
-                username = user_id[:8]
+                if user_data.data and user_data.data.get("username"):
+                     username = user_data.data.get("username")
+                else:
+                     username = f"Guest_{user_id[:4]}"
+            except Exception as e:
+                print(f"Username fetch error (LEFT): {e}")
+                username = f"Guest_{user_id[:4]}"
             
             await manager.broadcast(room_id, {
                 "type": "PLAYER_LEFT", 

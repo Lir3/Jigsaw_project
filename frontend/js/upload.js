@@ -101,6 +101,10 @@ window.addEventListener('load', async () => {
     console.log("Initializing puzzle via upload.js...");
     try {
         await initPuzzle(uploaded, null);
+        // ★ ゲストプレイでもタイマーを開始する
+        if (typeof startTimer === 'function') {
+            startTimer();
+        }
     } catch (e) {
         console.error("Error initializing puzzle:", e);
     }

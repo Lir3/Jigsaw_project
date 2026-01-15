@@ -83,11 +83,11 @@ class Piece {
 // タイマー開始関数
 function startTimer() {
     if (timer) clearInterval(timer);
-    $time.innerHTML = `${time} 秒`;
+    $time.innerHTML = `${time}`;
     $time.style.color = '#000';
     timer = setInterval(() => {
         time++;
-        $time.innerHTML = `${time} 秒`;
+        $time.innerHTML = `${time}`;
     }, 1000);
 }
 
@@ -564,9 +564,10 @@ function handleDrop() {
 
                 if (Math.abs(currentDistX - idealDistX) < snapDistance &&
                     Math.abs(currentDistY - idealDistY) < snapDistance) {
-                    mergeGroups(myP, other);
-                    merged = true;
-                    break;
+                    // ★ ユーザー要望により、結合処理を無効化 (盤面吸着のみ有効)
+                    // mergeGroups(myP, other);
+                    // merged = true;
+                    // break;
                 }
             }
         }
