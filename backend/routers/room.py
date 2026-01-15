@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Form, HTTPException, Depends
+from fastapi import APIRouter, Form, HTTPException, Depends, UploadFile, File
 from database import supabase
 from routers.user import get_current_user
 import uuid
@@ -114,3 +114,24 @@ def get_room_wait_info(room_id: str):
     }
 
 
+@router.post("/upload")
+async def upload_room_image(file: UploadFile = File(...)):
+    # 保存先ディレクトリ (frontend/static/uploads)
+    # ※ 本来は main.py の frontend_path を参照したいが、簡易的に相対パス算出
+    import os
+    import shutil
+    
+    # backend/routers/room.py -> backend/routers -> backend -> jigsaw_project -> frontend
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    upload_dir = os.path.join(base_dir, "frontend", "uploads")
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    # ファイル名 (衝突防止のためUUID付与推奨だが、今回は簡易実装)
+    file_name = f"{uuid.uuid4()}_{file.filename}"
+    file_path = os.path.join(upload_dir, file_name)
+    
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+        
+    # URLを返す
+    return {"url": f"/static/uploads/{file_name}"}

@@ -88,6 +88,13 @@ function startTimer() {
     }, 1000);
 }
 
+function stopTimer() {
+    if (timer) {
+        clearInterval(timer);
+        timer = null;
+    }
+}
+
 async function initPuzzle(imageUrl, savedPiecesData) {
     if (!can) return;
 
@@ -348,6 +355,9 @@ function rotateGroup(pivotPiece, direction) {
             p.Y = pivotPiece.Y - relX;
         }
     });
+
+    // ★Hook: Rotate
+    if (typeof window.onPieceRotate === 'function') window.onPieceRotate(pivotPiece);
 }
 
 // ★キーボード操作 (Q/Eで回転)
@@ -466,6 +476,9 @@ window.addEventListener('mousedown', (ev) => {
                 pieces.push(p);
             }
         });
+
+        // ★Hook: Grab
+        if (typeof window.onPieceGrab === 'function') window.onPieceGrab(movingPiece);
     }
 });
 
@@ -519,6 +532,9 @@ window.addEventListener('mousemove', (ev) => {
             p.Y += correctionY;
         });
     }
+
+    // ★Hook: Move
+    if (typeof window.onPieceMove === 'function') window.onPieceMove(movingPiece);
 });
 
 // ★離す処理（共通化）
@@ -566,6 +582,10 @@ function handleDrop() {
         p.scale = 1;
         p.shadow = false;
     });
+
+    // ★Hook: Drop (Release)
+    if (typeof window.onPieceDrop === 'function') window.onPieceDrop(movingPiece);
+
     movingPiece = null;
     check();
 }
@@ -576,8 +596,31 @@ function handleDrop() {
 
 // p1（ドラッグ中のグループの一部）を p2（静止しているグループの一部）に合わせて結合する
 function mergeGroups(draggedPiece, stationaryPiece) {
+    // 同じピースなら何もしない
+    if (draggedPiece === stationaryPiece) {
+        console.log('Same piece, skipping merge');
+        return;
+    }
+
     const targetGroup = stationaryPiece.group;
     const movingGroup = draggedPiece.group;
+
+    // 既に同じグループなら何もしない
+    if (targetGroup === movingGroup) {
+        console.log('Already same group, skipping merge');
+        return;
+    }
+
+    // グループが配列でない、または異常に大きい場合
+    if (!Array.isArray(targetGroup) || !Array.isArray(movingGroup)) {
+        console.error('Invalid group structure', targetGroup, movingGroup);
+        return;
+    }
+
+    if (targetGroup.length > 100 || movingGroup.length > 100) {
+        console.error('Group too large!', targetGroup.length, movingGroup.length);
+        return;
+    }
 
     // 基準となる位置（p2の位置から、p1があるべき位置を計算）
     const correctX = stationaryPiece.X + (draggedPiece.OriginalCol - stationaryPiece.OriginalCol) * pieceSize;
@@ -587,22 +630,29 @@ function mergeGroups(draggedPiece, stationaryPiece) {
     const diffX = correctX - draggedPiece.X;
     const diffY = correctY - draggedPiece.Y;
 
+    // 新しい統合グループを作成（無限ループ防止）
+    const combinedGroup = [...targetGroup, ...movingGroup];
+
     // ドラッグ中のグループ全体をズレ分だけ補正して移動
     movingGroup.forEach(p => {
         p.X += diffX;
         p.Y += diffY;
-
-        // 配列を結合
-        targetGroup.push(p);
-
         // 参照先を更新（全員同じグループを見るようにする）
-        p.group = targetGroup;
+        p.group = combinedGroup;
+    });
+
+    // ターゲットグループのメンバーも新しいグループを参照
+    targetGroup.forEach(p => {
+        p.group = combinedGroup;
     });
 
     // もし静止側がロック済みなら、くっついたグループもロックする
     if (stationaryPiece.IsLocked) {
         movingGroup.forEach(p => p.IsLocked = true);
     }
+
+    // ★Hook: Merge
+    if (typeof window.onPieceMerge === 'function') window.onPieceMerge(draggedPiece, stationaryPiece);
 }
 
 // グループ全体を盤面の正解位置に固定する

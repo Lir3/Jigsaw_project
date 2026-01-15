@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <title>パズルプレイ - マルチプレイ</title>
+    <link rel="stylesheet" href="/static/css/play.css">
+    <style>
+        .header-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: #333;
+            color: white;
+        }
+
+        .timer-box {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .room-info {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        #member-list {
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: calc(100vh - 60px);
+            overflow: auto;
+            background-color: #eee;
+            position: relative;
+        }
+
+        #waiting-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 100;
+        }
+
+        /* チャットスタイル */
+        .chat-container {
+            position: fixed;
+            bottom: 0;
+            right: 20px;
+            width: 350px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 8px 8px 0 0;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        .chat-header {
+            padding: 10px 15px;
+            background: #333;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            user-select: none;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .chat-header:hover {
+            background: #444;
+        }
+
+        .chat-body {
+            max-height: 300px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            max-height: 250px;
+            background: #f9f9f9;
+        }
+
+        .chat-message {
+            margin-bottom: 8px;
+            padding: 8px;
+            border-radius: 4px;
+            background: white;
+            border: 1px solid #eee;
+            font-size: 0.9rem;
+        }
+
+        .chat-message.own {
+            background: #e3f2fd;
+            border-color: #90caf9;
+        }
+
+        .chat-message strong {
+            color: #1976d2;
+            font-size: 0.85rem;
+        }
+
+        .chat-message .time {
+            color: #999;
+            font-size: 0.75rem;
+            margin-left: 5px;
+        }
+
+        .chat-input-area {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #eee;
+            background: white;
+        }
+
+        #chat-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-right: 8px;
+        }
+
+        .chat-input-area button {
+            padding: 8px 16px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .chat-input-area button:hover {
+            background: #218838;
+        }
+
+        .chat-container.collapsed .chat-body {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header-controls">
+        <div class="room-info">
+            <div class="timer-box">
+                時間: <span id="time">0</span> 秒
+            </div>
+            <div id="member-list">
+                参加者: <span id="members-count">1</span>名
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-back" onclick="exitRoom()">退出する</button>
+        </div>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="can"></canvas>
+    </div>
+
+    <!-- チャットエリア -->
+    <div id="chat-container" class="chat-container">
+        <div class="chat-header" onclick="toggleChat()">
+            <span>💬 チャット</span>
+            <span id="chat-toggle">▼</span>
+        </div>
+        <div id="chat-body" class="chat-body">
+            <div id="chat-messages"></div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="メッセージを入力..." maxlength="200">
+                <button onclick="sendChatMessage()">送信</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- クリア画面 (シングルと同じ) -->
+    <div id="completionModal"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; text-align:center; color:white;">
+        <div style="margin-top:20vh;">
+            <h1 style="font-size:4rem; color:#ffd700; text-shadow: 0 0 10px #ff0;">Completed!!</h1>
+            <div style="font-size:1.5rem; margin: 20px 0;">
+                <p>Time: <span id="modalTime" style="font-weight:bold; font-size:2rem;"></span> 秒</p>
+            </div>
+            <button onclick="location.href='/room/list'"
+                style="padding:15px 40px; font-size:1.2rem; background:#28a745; color:white; border:none; border-radius:30px; cursor:pointer;">
+                ルーム一覧へ
+            </button>
+        </div>
+    </div>
+
+    <img id="completedImagePreview" style="display:none;">
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="/static/js/puzzle_logic.js"></script>
+    <script src="/static/js/multi_play.js"></script>
+
+</body>
+
+</html>

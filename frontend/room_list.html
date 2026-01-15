@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8">
   <title>ルーム一覧</title>
@@ -18,27 +19,27 @@
     </div>
   </div>
 
-<script>
-async function fetchRooms() {
-  try {
-    const res = await fetch("http://127.0.0.1:8000/room/list");
-    const data = await res.json();
+  <script>
+    async function fetchRooms() {
+      try {
+        const res = await fetch("http://127.0.0.1:8000/room/list");
+        const data = await res.json();
 
-    const list = document.getElementById("roomList");
-    list.innerHTML = "";
+        const list = document.getElementById("roomList");
+        list.innerHTML = "";
 
-    if (!data.rooms || data.rooms.length === 0) {
-      list.innerHTML = "<p>現在ルームはありません</p>";
-      return;
-    }
+        if (!data.rooms || data.rooms.length === 0) {
+          list.innerHTML = "<p>現在ルームはありません</p>";
+          return;
+        }
 
-    data.rooms.forEach(room => {
-      const isFull = room.current_players >= room.max_players;
+        data.rooms.forEach(room => {
+          const isFull = room.current_players >= room.max_players;
 
-      const div = document.createElement("div");
-      div.className = "room-card";
+          const div = document.createElement("div");
+          div.className = "room-card";
 
-      div.innerHTML = `
+          div.innerHTML = `
         <div class="room-info">
           <p class="room-name">
             ${room.name}
@@ -56,27 +57,43 @@ async function fetchRooms() {
         </button>
       `;
 
-      list.appendChild(div);
-    });
+          list.appendChild(div);
+        });
 
-  } catch (e) {
-    alert("ルーム取得失敗");
-  }
-}
+      } catch (e) {
+        alert("ルーム取得失敗");
+      }
+    }
 
-function joinRoom(roomId, hasPassword) {
-  if (hasPassword) {
-    const password = prompt("パスワードを入力してください");
-    if (!password) return;
+    async function joinRoom(roomId, hasPassword) {
+      if (hasPassword) {
+        const password = prompt("パスワードを入力してください");
+        if (!password) return;
+        localStorage.setItem("room_password", password);
+      }
 
-    localStorage.setItem("room_password", password);
-  }
+      // APIで参加登録
+      const userId = localStorage.getItem("user_id");
+      const form = new FormData();
+      form.append("room_id", roomId);
 
-  window.location.href = `/room/wait?room_id=${roomId}`;
-}
+      try {
+        await fetch("http://127.0.0.1:8000/room/join", {
+          method: "POST",
+          headers: { "Authorization": userId },
+          body: form
+        });
+      } catch (e) {
+        console.error("Join error:", e);
+        // エラーでもとりあえず進むか、アラート出すか
+      }
 
-fetchRooms();
-</script>
+      window.location.href = `/multi_play.html?room_id=${roomId}`;
+    }
+
+    fetchRooms();
+  </script>
 
 </body>
+
 </html>

@@ -3,7 +3,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
-from routers import puzzle, user, room
+from routers import puzzle, user, room, multiplayer
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
@@ -20,7 +20,7 @@ base_path = os.path.dirname(os.path.abspath(__file__))
 # ★このパスは環境に合わせて確認してください
 frontend_path = os.path.abspath(os.path.join(base_path, "../frontend"))
 
-# --- CORS設定 ---
+# CORS設定 (WebSocketにも影響する場合があるため確認)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -36,9 +36,10 @@ app.mount("/static", StaticFiles(directory=os.path.join(frontend_path)), name="s
 
 # --- ルーター登録 ---
 # ピースの保存・取得などのロジックは routers/puzzle.py に集約されています
-app.include_router(puzzle.router, prefix="/puzzle")
-app.include_router(user.router, prefix="/user")
-app.include_router(room.router, prefix="/room")
+app.include_router(user.router, prefix="/user", tags=["User"])
+app.include_router(puzzle.router, prefix="/puzzle", tags=["Puzzle"])
+app.include_router(room.router, prefix="/room", tags=["Room"])
+app.include_router(multiplayer.router, tags=["Multiplayer"])
 
 # ==========================================================
 #  画面提供 (FileResponse)
@@ -67,6 +68,13 @@ def serve_play_html():
     path = os.path.join(frontend_path, "play.html")
     if not os.path.exists(path):
         return JSONResponse(content={"error": "play.html が存在しません"}, status_code=404)
+    return FileResponse(path)
+
+@app.get("/multi_play.html")
+def serve_multi_play_html():
+    path = os.path.join(frontend_path, "multi_play.html")
+    if not os.path.exists(path):
+        return JSONResponse(content={"error": "multi_play.html が存在しません"}, status_code=404)
     return FileResponse(path)
 
 

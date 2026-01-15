@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8">
   <title>ルーム作成</title>
@@ -12,6 +13,9 @@
 
     <!-- ✅ id付与 & action削除 -->
     <form id="roomCreateForm">
+
+      <label>パズル画像を選択 (必須)</label>
+      <input type="file" name="image" accept="image/*" required>
 
       <label>ルーム名</label>
       <input type="text" name="name" required>
@@ -30,41 +34,78 @@
     <div id="result"></div>
   </div>
 
-<script>
-document.getElementById("roomCreateForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
+  <script>
+    document.getElementById("roomCreateForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
 
-  const formData = new FormData(e.target);
-  const userId = localStorage.getItem("user_id");
+      const formElement = e.target;
+      const formData = new FormData(formElement);
 
-  if (!userId) {
-    alert("ログインしてください");
-    location.href = "/user/login";
-    return;
-  }
+      // ファイルを取得
+      const fileInput = formElement.querySelector('input[name="image"]');
+      const file = fileInput.files[0];
 
-  try {
-    const res = await fetch("/room/create", {
-      method: "POST",
-      headers: {
-        "Authorization": userId   // ✅ 超重要
-      },
-      body: formData
+      const userId = localStorage.getItem("user_id");
+
+      if (!userId) {
+        alert("ログインしてください");
+        location.href = "/user/login";
+        return;
+      }
+
+      if (!file) {
+        alert("画像を選択してください");
+        return;
+      }
+
+      try {
+        // 1. 画像アップロード
+        const uploadForm = new FormData();
+        uploadForm.append("file", file);
+
+        const uploadRes = await fetch("/room/upload", {
+          method: "POST",
+          body: uploadForm
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error("画像のアップロードに失敗しました");
+        }
+
+        const uploadData = await uploadRes.json();
+        const imageUrl = uploadData.url;
+
+        // 2. ルーム作成 (画像URLは送らず、RoomIDだけ取得)
+        // ※ API側には画像URLを保存するカラムがないため、localStorage経由でホストが持ち運ぶ
+        // (理想的には rooms テーブルに image_url カラムを追加すべき)
+
+        // formDataからimageを除外するか、そのまま送っても無視されるだけなのでOK
+        const res = await fetch("/room/create", {
+          method: "POST",
+          headers: {
+            "Authorization": userId
+          },
+          body: formData
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          alert("ルーム作成成功！");
+          // ホスト用の画像URLを保存
+          localStorage.setItem("host_image_url", imageUrl);
+
+          location.href = `/multi_play.html?room_id=${data.room_id}`;
+        } else {
+          document.getElementById("result").innerText = data.detail || "作成失敗";
+        }
+      } catch (err) {
+        document.getElementById("result").innerText = "エラー: " + err;
+        console.error(err);
+      }
     });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      alert("ルーム作成成功！");
-      location.href = `/room/wait?room_id=${data.room_id}`;
-    } else {
-      document.getElementById("result").innerText = data.detail || "作成失敗";
-    }
-  } catch (err) {
-    document.getElementById("result").innerText = "通信エラー: " + err;
-  }
-});
-</script>
+  </script>
 
 </body>
+
 </html>
