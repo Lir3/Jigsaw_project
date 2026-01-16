@@ -136,8 +136,21 @@ def serve_room_list():
     path = os.path.join(frontend_path, "room_list.html")
     return FileResponse(path)
 
-#接続テストページ
-@app.get("/room/wait")
-def serve_room_wait():
-    path = os.path.join(frontend_path, "room_wait.html")
+@app.get("/error")
+def serve_error_html():
+    path = os.path.join(frontend_path, "error.html")
+    if not os.path.exists(path):
+         return JSONResponse(content={"error": "error.html が存在しません"}, status_code=404)
     return FileResponse(path)
+
+# 404 エラーハンドリング
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request, exc):
+    if exc.status_code == 404:
+        # フロントエンドの error.html を返す
+        path = os.path.join(frontend_path, "error.html")
+        if os.path.exists(path):
+            return FileResponse(path, status_code=404)
+    return JSONResponse({"detail": str(exc.detail)}, status_code=exc.status_code)
