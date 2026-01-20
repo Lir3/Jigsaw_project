@@ -23,8 +23,8 @@ def create_room(
         "host_user_id": current_user["id"],
         "max_players": max_players,
         "difficulty": difficulty,
-        "password": password,
-        "image_url": image_url # 追加 (DBカラム作成が必要かも)
+        "password": password
+        # "image_url": image_url # DBカラムがないため一時的に無効化
     }
 
     result = supabase.table("rooms").insert(data).execute()
@@ -43,9 +43,9 @@ def create_room(
 
 @router.get("/list")
 def get_rooms():
-    # difficulty, image_url も取得
+    # difficultyも取得 (image_urlはカラムがないため除外)
     rooms_result = supabase.table("rooms").select(
-        "id, name, max_players, password, difficulty, image_url"
+        "id, name, max_players, password, difficulty"
     ).execute()
 
     if not rooms_result.data:
