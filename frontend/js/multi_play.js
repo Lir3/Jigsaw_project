@@ -422,6 +422,12 @@ function startSyncedTimer() {
         const currentTime = Math.floor(Date.now() / 1000);
         const elapsedSeconds = currentTime - gameStartTime;
 
+        // ★ global variable 'time' in puzzle_logic.js should be updated
+        // assuming 'time' is accessible globally or locally via module scope sharing
+        try {
+            time = elapsedSeconds;
+        } catch (e) { /* ignore ref error */ }
+
         if (timeDisplay) {
             timeDisplay.innerHTML = `${elapsedSeconds}`;
         }
@@ -538,6 +544,7 @@ function enableImageDrag(imgElement) {
     // Zoom
     imgElement.addEventListener('wheel', (e) => {
         e.preventDefault();
+        e.stopPropagation(); // Block scroll
         const delta = e.deltaY > 0 ? 0.9 : 1.1;
         scale *= delta;
         scale = Math.min(Math.max(0.5, scale), 5.0); // Limit

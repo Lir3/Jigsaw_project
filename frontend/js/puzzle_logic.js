@@ -81,9 +81,10 @@ function useHint() {
 function setupHintButton() {
     const hintBtn = document.getElementById('hintBtn');
     if (hintBtn) {
-        hintBtn.addEventListener('click', () => {
+        // Use onclick to prevent multiple listeners accumulation
+        hintBtn.onclick = () => {
             useHint();
-        });
+        };
     }
 }
 

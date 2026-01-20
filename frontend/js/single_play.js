@@ -340,6 +340,7 @@ function enableImageDrag(imgElement) {
     // Zoom
     imgElement.addEventListener('wheel', (e) => {
         e.preventDefault();
+        e.stopPropagation(); // Block scroll
         const delta = e.deltaY > 0 ? 0.9 : 1.1;
         scale *= delta;
         scale = Math.min(Math.max(0.5, scale), 5.0); // Limit
