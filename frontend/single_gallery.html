@@ -31,12 +31,14 @@
         <div class="modal-content">
             <h3>難易度を選択</h3>
             <p>パズルの難易度を選んでください</p>
-            <select id="modalDifficultySelect"
-                style="padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; width: 80%; margin-bottom: 20px;">
-                <option value="easy">簡単（4×4）</option>
-                <option value="normal" selected>普通（6×6）</option>
-                <option value="hard">難しい（8×8）</option>
-            </select>
+            <div style="margin-bottom: 20px;">
+                <label>ピース数: <span id="pieceCountVal" style="font-weight:bold; font-size:1.2rem;">36</span></label>
+                <br>
+                <input type="range" id="difficultySlider" min="4" max="100" step="1" value="36"
+                    oninput="document.getElementById('pieceCountVal').textContent = Math.pow(this.value, 2)"
+                    style="width: 80%; cursor: pointer;">
+                <p style="font-size:0.8rem; color:#666;">※スライダーの値は1辺のピース数です (4=16, 6=36, 10=100)</p>
+            </div>
             <div style="display: flex; justify-content: space-around;">
                 <button onclick="confirmStartGame()"
                     style="background: #ffb347; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">開始</button>

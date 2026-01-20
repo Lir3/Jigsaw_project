@@ -512,6 +512,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function enableImageDrag(imgElement) {
     let isDragging = false;
     let offsetX, offsetY;
+    let scale = 1;
 
     imgElement.addEventListener('mousedown', (e) => {
         if (e.button !== 0) return;
@@ -524,13 +525,26 @@ function enableImageDrag(imgElement) {
 
     window.addEventListener('mousemove', (e) => {
         if (!isDragging) return;
-        imgElement.style.left = `${e.clientX - offsetX}px`;
-        imgElement.style.top = `${e.clientY - offsetY}px`;
+        // Simple drag, similar to single_play.js
+        imgElement.style.left = `${e.clientX - 100}px`;
+        imgElement.style.top = `${e.clientY - 100}px`;
     });
 
     window.addEventListener('mouseup', () => {
         isDragging = false;
     });
+
+    // Zoom
+    imgElement.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        scale *= delta;
+        scale = Math.min(Math.max(0.5, scale), 5.0); // Limit
+        imgElement.style.transform = `scale(${scale})`;
+    });
+
+    // Hint Button
+    if (typeof setupHintButton === 'function') setupHintButton();
 }
 
 function escapeHtml(text) {

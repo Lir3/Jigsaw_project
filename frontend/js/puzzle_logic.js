@@ -49,6 +49,36 @@ function zoomOut() {
     adjustZoomCenter(1 / 1.2);
 }
 
+// Hint Functionality
+function useHint() {
+    if (!pieces || pieces.length === 0) return;
+    if (isGameCompleted) return;
+
+    // Find a piece that is NOT locked
+    const loosePieces = pieces.filter(p => !p.IsLocked);
+    if (loosePieces.length === 0) return;
+
+    // Randomly select one
+    const p = loosePieces[Math.floor(Math.random() * loosePieces.length)];
+
+    // Snap to correct position immediately
+    snapGroupToBoard(p); // This locks it
+
+    // Effect? Maybe flash it (TODO)
+    drawAll();
+    check();
+}
+
+// ヒントボタンのイベントリスナー設定 (Called from play.html/multi_play.html)
+function setupHintButton() {
+    const hintBtn = document.getElementById('hintBtn');
+    if (hintBtn) {
+        hintBtn.addEventListener('click', () => {
+            useHint();
+        });
+    }
+}
+
 function adjustZoomCenter(ratio) {
     const cx = can.width / 2;
     const cy = can.height / 2;
@@ -151,12 +181,20 @@ async function initPuzzle(imageUrl, savedPiecesData, difficultyArg) {
     if (!can) return;
 
     // 難易度 (引数優先 -> LocalStorage -> Default)
+    // 難易度 (引数優先 -> LocalStorage -> Default)
     const difficulty = difficultyArg || localStorage.getItem('puzzleDifficulty') || 'normal';
 
     let basePieceCount = 6; // 短い辺の基準分割数
-    if (difficulty === 'easy') basePieceCount = 4;
-    else if (difficulty === 'hard') basePieceCount = 8;
-    else if (difficulty === 'expert') basePieceCount = 10; // Expert追加
+
+    // Check if difficulty is a number (from slider)
+    if (!isNaN(difficulty)) {
+        basePieceCount = parseInt(difficulty, 10);
+    } else {
+        if (difficulty === 'easy') basePieceCount = 4;
+        else if (difficulty === 'hard') basePieceCount = 8;
+        else if (difficulty === 'expert') basePieceCount = 10;
+        else basePieceCount = 6; // normal
+    }
 
     // 画像読み込み
     const sourceImage = await createSourceImage(imageUrl);
@@ -503,30 +541,36 @@ function drawAll() {
 
     ctx.save();
 
-    // Grid or Background for Puzzle Area (Visual Guide)
-    // 変換前に描画するか、変換後に描画するか。
-    // 変換後の方が「ここがパズルエリア」とわかりやすい。
-
     // Apply View Transform
     ctx.translate(view.x, view.y);
     ctx.scale(view.scale, view.scale);
 
     // Draw Board Boundary
-    let s = pieceSize / 4;
     const boardW = pieceSize * colMax;
     const boardH = pieceSize * rowMax;
 
-    // パズルエリアの背景（少し暗くして分かりやすく）
+    // パズルエリアの背景
     ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
     ctx.fillRect(0, 0, boardW, boardH);
 
     // 枠線
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-    ctx.lineWidth = 2 / view.scale; // 線の太さをスケールに依存させない工夫
+    ctx.lineWidth = 2 / view.scale;
     ctx.strokeRect(0, 0, boardW, boardH);
 
-    // Draw Pieces
-    pieces.forEach(p => { if (p !== movingPiece) p.Draw(); });
+    // Draw Pieces in Order: Locked (Bottom) -> Loose (Middle) -> Moving (Top)
+
+    // 1. Locked Pieces
+    pieces.forEach(p => {
+        if (p.IsLocked) p.Draw();
+    });
+
+    // 2. Loose Pieces (excluding movingPiece)
+    pieces.forEach(p => {
+        if (!p.IsLocked && p !== movingPiece) p.Draw();
+    });
+
+    // 3. Moving Piece (Top)
     if (movingPiece) movingPiece.Draw();
 
     ctx.restore();

@@ -120,8 +120,19 @@ async function confirmStartGame() {
     if (!currentPuzzleId) return;
 
     // 難易度を取得して保存
-    const difficulty = document.getElementById('modalDifficultySelect').value;
-    localStorage.setItem('puzzleDifficulty', difficulty);
+    // 難易度を取得して保存 (スライダーの値=1辺の数)
+    const baseCount = document.getElementById('difficultySlider').value;
+    // We want to pass the count or the "basePieceCount"
+    // initPuzzle expects "basePieceCount" IF it is a number.
+    // So we can just pass the slider value directly (e.g. "6") IF logic accepts it.
+    // My updated initPuzzle accepts int as basePieceCount.
+    // Wait, updated initPuzzle logic: `if (!isNaN(difficulty)) basePieceCount = parseInt(difficulty)`
+    // So passing "6" means 6x6. Passing "36" means basePieceCount=36 -> 36x36?
+    // Let's check puzzle_logic.js again.
+    // Line 158: `if (!isNaN(difficulty)) basePieceCount = parseInt(difficulty)`
+    // So if I pass "4", basePieceCount is 4. -> 4x4.
+    // OK. So I pass the slider value directly.
+    localStorage.setItem('puzzleDifficulty', baseCount);
 
     try {
         const res = await fetch(`${API_BASE_URL}/puzzle/session`, {
@@ -274,8 +285,9 @@ function renderGallery(puzzles) {
 }
 
 function formatDifficulty(diff) {
-    if (!diff) return '普通'; // データがない場合はデフォルト
+    if (!diff) return '普通';
     if (diff === 'easy') return '簡単';
     if (diff === 'hard') return '難しい';
+    if (!isNaN(diff)) return `${diff}x${diff} (${diff * diff}ピース)`;
     return '普通';
 }

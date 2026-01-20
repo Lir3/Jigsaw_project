@@ -9,8 +9,9 @@ router = APIRouter()
 def create_room(
     name: str = Form(...),
     max_players: int = Form(...),
-    difficulty: str = Form("normal"), # デフォルト値
+    difficulty: str = Form("normal"), # デフォルト値 (ピース数が入るようになる)
     password: str = Form(None),
+    image_url: str = Form(None), # 追加
     current_user=Depends(get_current_user)
 ):
     room_id = str(uuid.uuid4())
@@ -22,7 +23,8 @@ def create_room(
         "host_user_id": current_user["id"],
         "max_players": max_players,
         "difficulty": difficulty,
-        "password": password
+        "password": password,
+        "image_url": image_url # 追加 (DBカラム作成が必要かも)
     }
 
     result = supabase.table("rooms").insert(data).execute()
@@ -41,9 +43,9 @@ def create_room(
 
 @router.get("/list")
 def get_rooms():
-    # difficultyも取得
+    # difficulty, image_url も取得
     rooms_result = supabase.table("rooms").select(
-        "id, name, max_players, password, difficulty"
+        "id, name, max_players, password, difficulty, image_url"
     ).execute()
 
     if not rooms_result.data:
@@ -65,7 +67,9 @@ def get_rooms():
             "name": room["name"],
             "max_players": room["max_players"],
             "current_players": current_players,
+            # difficultyにはピース数("25"など)が入る想定
             "difficulty": room.get("difficulty", "normal"),
+            "image_url": room.get("image_url"), # 追加
             "has_password": bool(room["password"])
         })
 

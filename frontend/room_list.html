@@ -40,14 +40,22 @@
           div.className = "room-card";
 
           div.innerHTML = `
-        <div class="room-info">
-          <p class="room-name">
-            ${room.name}
-            ${room.has_password ? "🔒" : ""}
-          </p>
-          <p>
-            人数：${room.current_players} / ${room.max_players}
-          </p>
+        <div class="room-info" style="display:flex; align-items:center; gap:10px;">
+          <!-- ルーム画像 (あれば表示) -->
+          ${room.image_url ? `<img src="${room.image_url}" style="width:50px; height:50px; object-fit:cover; border-radius:4px;">` : ''}
+          
+          <div>
+            <p class="room-name">
+              ${room.name}
+              ${room.has_password ? "🔒" : ""}
+            </p>
+            <p style="font-size:0.85rem; color:#666;">
+               ピース数: ${formatDifficulty(room.difficulty)}
+            </p>
+            <p>
+              人数：${room.current_players} / ${room.max_players}
+            </p>
+          </div>
         </div>
 
         <button
@@ -89,6 +97,19 @@
       }
 
       window.location.href = `/multi_play.html?room_id=${roomId}`;
+    }
+
+
+    function formatDifficulty(diff) {
+      if (!diff) return 'Normal';
+      if (diff === 'easy') return 'Easy';
+      if (diff === 'hard') return 'Hard';
+      if (diff === 'normal') return 'Normal';
+      if (!isNaN(diff)) {
+        // diff is side length (e.g. "6")
+        return `${diff}x${diff} (${diff * diff}ピース)`;
+      }
+      return diff;
     }
 
     fetchRooms();

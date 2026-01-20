@@ -435,9 +435,7 @@ async def puzzle_websocket(websocket: WebSocket, room_id: str, user_id: str):
             
         else:
             # 通常の退出（ゲスト）
-            count = manager.get_member_count(room_id)
-            
-            # ユーザー名取得
+            # ユーザー名取得 (DB削除前に取得しておく)
             try:
                 from .user import supabase
                 user_data = supabase.table("users").select("username").eq("id", user_id).single().execute()
@@ -448,6 +446,15 @@ async def puzzle_websocket(websocket: WebSocket, room_id: str, user_id: str):
             except Exception as e:
                 print(f"Username fetch error (LEFT): {e}")
                 username = f"Guest_{user_id[:4]}"
+
+            # DBからメンバー削除
+            try:
+                from .room import supabase
+                supabase.table("room_members").delete().eq("room_id", room_id).eq("user_id", user_id).execute()
+            except Exception as e:
+                print(f"Error deleting member from DB: {e}")
+
+            count = manager.get_member_count(room_id)
             
             await manager.broadcast(room_id, {
                 "type": "PLAYER_LEFT", 
