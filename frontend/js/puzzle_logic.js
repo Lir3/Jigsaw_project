@@ -645,6 +645,7 @@ window.addEventListener('mousedown', (ev) => {
         // 逆順でチェック（手前のピース優先）
         // Draw Order: Locked -> Loose -> Moving
         // Hit Test Order: Moving -> Loose(Reverse) -> Locked(Reverse)
+        let clickedPiece = null; // Fix: Define variable
         let checkList = [];
 
         // 1. Moving (Usually handled by 'handleDrop' but just in case)
