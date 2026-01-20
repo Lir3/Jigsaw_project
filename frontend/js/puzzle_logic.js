@@ -64,6 +64,14 @@ function useHint() {
     // Snap to correct position immediately
     snapGroupToBoard(p); // This locks it
 
+    // Fix Rotation
+    p.Rotation = 0;
+    p.visualRotation = 0;
+    p.group.forEach(g => {
+        g.Rotation = 0;
+        g.visualRotation = 0;
+    });
+
     // Effect? Maybe flash it (TODO)
     drawAll();
     check();
@@ -627,17 +635,61 @@ window.addEventListener('mousedown', (ev) => {
         // Drop
         handleDrop();
     } else {
-        // Pickup
-        let clickedPiece = null;
         // 逆順でチェック（手前のピース優先）
-        for (let i = pieces.length - 1; i >= 0; i--) {
-            // IsClick判定はWorld座標で行う必要がある
-            // Piece.IsClickの実装を確認: 単純な距離判定ならWorld座標を渡せばOK
-            if (pieces[i].IsClick(wRef.x, wRef.y)) {
-                clickedPiece = pieces[i];
+        // Draw Order: Locked -> Loose -> Moving
+        // Hit Test Order: Moving -> Loose(Reverse) -> Locked(Reverse)
+        let checkList = [];
+
+        // 1. Moving (Usually handled by 'handleDrop' but just in case)
+        if (movingPiece) checkList.push(movingPiece);
+
+        // 2. Loose Pieces (Reverse of loose pieces list)
+        // loose pieces are pieces.filter(p => !p.IsLocked && p !== movingPiece)
+        // We want to iterate them from last to first
+        const loose = pieces.filter(p => !p.IsLocked && p !== movingPiece).reverse();
+        checkList.push(...loose);
+
+        // 3. Locked Pieces (Reverse) - IF we allow picking locked pieces (we don't for move, but maybe for other interactions?)
+        // User said: "pieces that snapped went to back". 
+        // And "piece on top of it cannot be grabbed".
+        // If we only iterate Loose pieces first, we will find the loose piece on TOP of the locked piece correctly.
+        // The previous logic was: `for (let i = pieces.length - 1; ...)` which iterated insertion order.
+        // If "Locked" pieces are still in `pieces` array, and simply drawn first, that's fine.
+        // BUT the critical issue is: does `pieces` order change? No.
+        // If I draw Locked first, then Loose. 
+        // A loose piece (index 0) might be drawn ON TOP OF a locked piece (index 10) because I changed drawAll.
+        // But `pieces` loop (reverse) hits index 10 first. If index 10 covers index 0, it "hits" index 10.
+        // But index 10 is locked, so we skip it? `if (!clickedPiece.IsLocked)` logic is inside the found check?
+        // No. The `break` happens as soon as `IsClick` returns true.
+        // So if Locked Piece (Bottom) is hit first, we set clickedPiece = Locked, break.
+        // Then `if (!clickedPiece.IsLocked)` fails. So we don't pick up the piece.
+        // AND we don't check the Loose Piece (Top) because we broke the loop.
+        // FIX: We must NOT break if the hit piece is Locked, or better: Use specific order.
+
+        // Correct Hit Test Loop:
+        for (const p of checkList) {
+            if (p.IsClick(wRef.x, wRef.y)) {
+                clickedPiece = p;
                 break;
             }
         }
+
+        // If not found in Loose/Moving, check Locked? 
+        // Actually if we want to grab loose pieces, we only need to check loose pieces first.
+        // If we hit a loose piece, we grab it.
+        // If we don't hit any loose piece, we might hit a locked piece (but can't grab it).
+
+        // So `checkList` should contain Loose Pieces (Top) first.
+        // If there is ANY loose piece under mouse, we grab it.
+        // Even if there is a Locked piece under it (which is physically below it), we hit the loose one first.
+
+        /* 
+        Original Loop:
+        for (let i = pieces.length - 1; i >= 0; i--) { ... }
+        This relies on index order = z-order.
+        But my drawAll changed z-order physically (Locked first).
+        So I must change hit test order.
+        */
 
         if (clickedPiece && !clickedPiece.IsLocked && !clickedPiece.isHeldByOther) {
             // --- ピースを掴む ---

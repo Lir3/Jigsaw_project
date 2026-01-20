@@ -25,7 +25,7 @@
 
       <div style="margin-bottom: 15px;">
         <label>ピース数: <span id="pieceCountVal" style="font-weight:bold;">36</span> (6x6)</label>
-        <input type="range" name="difficulty" min="4" max="100" step="2" value="6"
+        <input type="range" name="difficulty" min="4" max="40" step="2" value="6"
           oninput="const val = this.value; document.getElementById('pieceCountVal').textContent = Math.pow(val, 2); document.getElementById('pieceCountDesc').textContent = val + 'x' + val;"
           style="width: 100%; cursor: pointer;">
         <p id="pieceCountDesc" style="font-size:0.8rem; color:#666; margin-top:2px;">6x6</p>

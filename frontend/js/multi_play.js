@@ -521,6 +521,7 @@ function enableImageDrag(imgElement) {
         offsetX = e.clientX - rect.left;
         offsetY = e.clientY - rect.top;
         e.preventDefault();
+        e.stopPropagation(); // Block unintended canvas interaction
     });
 
     window.addEventListener('mousemove', (e) => {

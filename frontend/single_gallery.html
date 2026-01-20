@@ -34,10 +34,10 @@
             <div style="margin-bottom: 20px;">
                 <label>ピース数: <span id="pieceCountVal" style="font-weight:bold; font-size:1.2rem;">36</span></label>
                 <br>
-                <input type="range" id="difficultySlider" min="4" max="100" step="1" value="36"
+                <input type="range" id="difficultySlider" min="4" max="40" step="1" value="6"
                     oninput="document.getElementById('pieceCountVal').textContent = Math.pow(this.value, 2)"
                     style="width: 80%; cursor: pointer;">
-                <p style="font-size:0.8rem; color:#666;">※スライダーの値は1辺のピース数です (4=16, 6=36, 10=100)</p>
+                <p style="font-size:0.8rem; color:#666;">※スライダーの値は1辺のピース数です (4=16, 6=36, 40=1600)</p>
             </div>
             <div style="display: flex; justify-content: space-around;">
                 <button onclick="confirmStartGame()"

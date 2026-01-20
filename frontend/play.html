@@ -20,6 +20,14 @@
 
         <div style="width: 1px; height: 24px; background: rgba(255,255,255,0.1); margin: 0 5px;"></div>
 
+        <!-- Timer in Header -->
+        <div class="timer-box"
+            style="margin: 0 10px; font-weight: bold; font-size: 1.2rem; min-width: 80px; text-align: center;">
+            <span id="time">0</span><span style="font-size: 0.8rem; margin-left: 2px;">秒</span>
+        </div>
+
+        <div style="width: 1px; height: 24px; background: rgba(255,255,255,0.1); margin: 0 5px;"></div>
+
         <button class="toolbar-btn" onclick="zoomOut()" title="ズームアウト">
             <ion-icon name="remove-circle-outline"></ion-icon>
         </button>
@@ -45,9 +53,6 @@
 
     <!-- Top Right Info Panel -->
     <div class="info-panel">
-        <div class="timer-box">
-            <span id="time">0</span>
-        </div>
         <div id="status-msg" class="status-msg"></div>
     </div>
 
