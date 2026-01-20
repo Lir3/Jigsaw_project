@@ -494,10 +494,12 @@ document.addEventListener('DOMContentLoaded', () => {
         toggleBtn.addEventListener('click', () => {
             if (previewImgElement.style.display === 'none' || previewImgElement.style.display === '') {
                 previewImgElement.style.display = 'block';
-                toggleBtn.textContent = '完成図を隠す';
+                toggleBtn.title = '完成図を隠す';
+                // toggleBtn.textContent = '完成図を隠す';
             } else {
                 previewImgElement.style.display = 'none';
-                toggleBtn.textContent = '完成図を見る';
+                toggleBtn.title = '完成図を見る';
+                // toggleBtn.textContent = '完成図を見る';
             }
         });
 

@@ -100,7 +100,9 @@ class Piece {
         const rad = this.visualRotation * 90 * Math.PI / 180;
         ctx.rotate(rad);
 
-        ctx.translate(-pieceSize / 2, -pieceSize / 2);
+        // Image is 1.5x pieceSize (s*6 vs s*4). Center is at 0.75*pieceSize.
+        // We want to center the image on the rotation pivot (which is the center of the grid cell).
+        ctx.translate(-pieceSize * 0.75, -pieceSize * 0.75);
 
         if (this.shadow) {
             ctx.shadowColor = 'rgba(0,0,0,0.5)';
