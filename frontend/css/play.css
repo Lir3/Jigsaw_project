@@ -27,9 +27,8 @@ body {
     /* 最背面 */
     background-color: #0f172a;
     /* Canvas背景も合わせる */
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    /* Flex centering removed for Pan/Zoom logic */
+    display: block;
 }
 
 #can {

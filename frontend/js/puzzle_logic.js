@@ -7,12 +7,59 @@ let colMax = 0;
 let rowMax = 0;
 let pieceSize = 80;
 
+// ★ View State (Zoom/Pan)
+let view = {
+    x: 0,
+    y: 0,
+    scale: 1.0,
+    isPanning: false,
+    panStartX: 0,
+    panStartY: 0,
+    panStartViewX: 0,
+    panStartViewY: 0
+};
+
+// 座標変換ヘルパー
+function toWorld(screenX, screenY) {
+    return {
+        x: (screenX - view.x) / view.scale,
+        y: (screenY - view.y) / view.scale
+    };
+}
+
 // DB連携 (single_play.js) からアクセスされるグローバル変数
 let timer = null;
 let time = 0; // 経過時間
 let isGameCompleted = false; // クリアフラグ
 const $time = document.getElementById('time'); // HTML要素
 const $status = document.getElementById('status-msg'); // HTML要素 (single_play.jsで使用)
+
+// 外部からのズーム操作用
+function zoomIn() {
+    view.scale = Math.min(view.scale * 1.2, 5.0);
+    // Center Zoom currently focuses on top-left or whatever. Ideally center screen.
+    // For simplicity, center zoom:
+    // view.x = centerX - (centerX - view.x) * ratio... 
+    // Manual inputs usually expect center screen zoom.
+    adjustZoomCenter(1.2);
+}
+
+function zoomOut() {
+    view.scale = Math.max(view.scale / 1.2, 0.1);
+    adjustZoomCenter(1 / 1.2);
+}
+
+function adjustZoomCenter(ratio) {
+    const cx = can.width / 2;
+    const cy = can.height / 2;
+    // World pos of center
+    const wx = (cx - view.x) / (view.scale / ratio); // old scale
+    const wy = (cy - view.y) / (view.scale / ratio);
+
+    // New view pos
+    view.x = cx - wx * view.scale;
+    view.y = cy - wy * view.scale;
+}
 
 // ピースクラス
 // ピースクラス（グルーピング＋回転対応版）
@@ -139,12 +186,25 @@ async function initPuzzle(imageUrl, savedPiecesData, difficultyArg) {
     // pieceSize (ピースの1辺のサイズ) を決定
     pieceSize = Math.floor(drawWidth / colMax);
 
-    // 3. キャンバスのサイズを決定
+    // 3. キャンバスのサイズをウィンドウサイズに合わせる
     const puzzleAreaWidth = colMax * pieceSize;
     const puzzleAreaHeight = rowMax * pieceSize;
 
-    can.width = puzzleAreaWidth * 2.5;
-    can.height = puzzleAreaHeight * 2;
+    // Canvas Fullscreen
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    // Initial View Centering
+    view.scale = Math.min(
+        (can.width * 0.8) / puzzleAreaWidth,
+        (can.height * 0.8) / puzzleAreaHeight
+    );
+    // Clamp initial scale
+    if (view.scale > 1.2) view.scale = 1.2;
+    if (view.scale < 0.5) view.scale = 0.5;
+
+    view.x = (can.width - puzzleAreaWidth * view.scale) / 2;
+    view.y = (can.height - puzzleAreaHeight * view.scale) / 2;
 
     // 4. 完成図の表示
     const completedCanvas = document.createElement('canvas');
@@ -383,10 +443,13 @@ window.addEventListener('dblclick', (ev) => {
     const clickX = ev.clientX - rect.left;
     const clickY = ev.clientY - rect.top;
 
+    // World座標に変換
+    const wRef = toWorld(clickX, clickY);
+
     // クリックされたピースを探す
     let clickedPiece = null;
     for (let i = pieces.length - 1; i >= 0; i--) {
-        if (pieces[i].IsClick(clickX, clickY)) {
+        if (pieces[i].IsClick(wRef.x, wRef.y)) {
             clickedPiece = pieces[i];
             break;
         }
@@ -424,14 +487,47 @@ function shuffleInitial() {
 let movingPiece = null;
 let oldX = 0, oldY = 0;
 
+function resizeCanvas() {
+    if (can) {
+        can.width = window.innerWidth;
+        can.height = window.innerHeight;
+        // 再描画が必要なら
+        // drawAll();
+    }
+}
+
 function drawAll() {
     ctx.clearRect(0, 0, can.width, can.height);
+
+    ctx.save();
+
+    // Grid or Background for Puzzle Area (Visual Guide)
+    // 変換前に描画するか、変換後に描画するか。
+    // 変換後の方が「ここがパズルエリア」とわかりやすい。
+
+    // Apply View Transform
+    ctx.translate(view.x, view.y);
+    ctx.scale(view.scale, view.scale);
+
+    // Draw Board Boundary
     let s = pieceSize / 4;
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 4;
-    ctx.strokeRect(s, s, pieceSize * colMax, pieceSize * rowMax);
+    const boardW = pieceSize * colMax;
+    const boardH = pieceSize * rowMax;
+
+    // パズルエリアの背景（少し暗くして分かりやすく）
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+    ctx.fillRect(0, 0, boardW, boardH);
+
+    // 枠線
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 2 / view.scale; // 線の太さをスケールに依存させない工夫
+    ctx.strokeRect(0, 0, boardW, boardH);
+
+    // Draw Pieces
     pieces.forEach(p => { if (p !== movingPiece) p.Draw(); });
     if (movingPiece) movingPiece.Draw();
+
+    ctx.restore();
 }
 
 // アニメーションループ開始
@@ -441,106 +537,138 @@ requestAnimationFrame(update);
 let mouseStartX = 0;
 let mouseStartY = 0;
 
-// ★ マウス操作の変更: クリックで掴み、クリックで離す (Sticky Grab)
+// ★ マウス操作の変更: Zoom & Pan 対応
+
+// Wheel Zoom
+window.addEventListener('wheel', (ev) => {
+    ev.preventDefault();
+    const zoomIntensity = 0.001;
+    const rect = can.getBoundingClientRect();
+    const mouseX = ev.clientX - rect.left;
+    const mouseY = ev.clientY - rect.top;
+
+    // 現在のマウス位置（World）を計算
+    const worldPos = toWorld(mouseX, mouseY);
+
+    // 新しいスケール
+    let newScale = view.scale * (1 - ev.deltaY * zoomIntensity);
+
+    // Clamp Scale
+    newScale = Math.min(Math.max(0.1, newScale), 5.0);
+
+    // マウス位置を中心にズームするように view.x, view.y を調整
+    // mouseX = view.x + worldPos.x * newScale
+    // => view.x = mouseX - worldPos.x * newScale
+    view.x = mouseX - worldPos.x * newScale;
+    view.y = mouseY - worldPos.y * newScale;
+
+    view.scale = newScale;
+    // drawAll()はループで回ってるので不要
+}, { passive: false });
+
+
 window.addEventListener('mousedown', (ev) => {
     if (ev.button !== 0) return;
     const rect = can.getBoundingClientRect();
     const clickX = ev.clientX - rect.left;
     const clickY = ev.clientY - rect.top;
 
+    // World座標に変換
+    const wRef = toWorld(clickX, clickY);
+
+    // --- ピース判定 ---
     if (movingPiece) {
-        // --- 既に掴んでいる場合 -> 離す (Drop処理) ---
+        // Drop
         handleDrop();
     } else {
-        // --- 掴んでいない場合 -> 掴む (Pickup処理) ---
-        // クリックされたピースを探す
+        // Pickup
         let clickedPiece = null;
+        // 逆順でチェック（手前のピース優先）
         for (let i = pieces.length - 1; i >= 0; i--) {
-            if (pieces[i].IsClick(clickX, clickY)) {
+            // IsClick判定はWorld座標で行う必要がある
+            // Piece.IsClickの実装を確認: 単純な距離判定ならWorld座標を渡せばOK
+            if (pieces[i].IsClick(wRef.x, wRef.y)) {
                 clickedPiece = pieces[i];
                 break;
             }
         }
 
-        if (!clickedPiece || clickedPiece.IsLocked || clickedPiece.isHeldByOther) return;
+        if (clickedPiece && !clickedPiece.IsLocked && !clickedPiece.isHeldByOther) {
+            // --- ピースを掴む ---
+            movingPiece = clickedPiece;
+            mouseStartX = wRef.x; // World座標で保存
+            mouseStartY = wRef.y;
 
-        movingPiece = clickedPiece;
-        mouseStartX = clickX; // 相対移動用
-        mouseStartY = clickY;
+            // グループ全体をドラッグ開始状態にする
+            movingPiece.group.forEach(p => {
+                p.startX = p.X;
+                p.startY = p.Y;
+                p.scale = 1.05;
+                p.shadow = true;
+                const idx = pieces.indexOf(p);
+                if (idx > -1) {
+                    pieces.splice(idx, 1);
+                    pieces.push(p);
+                }
+            });
+            if (typeof window.onPieceGrab === 'function') window.onPieceGrab(movingPiece);
 
-        // グループ全体をドラッグ開始状態にする
-        movingPiece.group.forEach(p => {
-            p.startX = p.X;
-            p.startY = p.Y;
-            p.scale = 1.05;
-            p.shadow = true;
-
-            // 最前面へ
-            const idx = pieces.indexOf(p);
-            if (idx > -1) {
-                pieces.splice(idx, 1);
-                pieces.push(p);
-            }
-        });
-
-        // ★Hook: Grab
-        if (typeof window.onPieceGrab === 'function') window.onPieceGrab(movingPiece);
+        } else {
+            // --- 背景クリック -> パンニング開始 ---
+            view.isPanning = true;
+            view.panStartX = clickX; // Screen座標
+            view.panStartY = clickY;
+            view.panStartViewX = view.x;
+            view.panStartViewY = view.y;
+            can.style.cursor = 'grabbing';
+        }
     }
 });
 
-// マウス移動
-// マウス移動
 window.addEventListener('mousemove', (ev) => {
-    if (!movingPiece) return;
     const rect = can.getBoundingClientRect();
     const currentX = ev.clientX - rect.left;
     const currentY = ev.clientY - rect.top;
 
-    // 前回のクリック位置(mouseStartX)からの差分を足す
-    const dx = currentX - mouseStartX;
-    const dy = currentY - mouseStartY;
+    // パンニング中
+    if (view.isPanning) {
+        const dx = currentX - view.panStartX;
+        const dy = currentY - view.panStartY;
+        view.x = view.panStartViewX + dx;
+        view.y = view.panStartViewY + dy;
+        return;
+    }
 
-    // 1. まず全員を仮移動させる
+    if (!movingPiece) return;
+
+    // ピース移動中 (World座標系での移動量)
+    // 画面上の移動量(dx_screen) / scale = ワールドでの移動量
+    // あるいは toWorld で変換した座標の差分
+    const wPos = toWorld(currentX, currentY);
+    const dx = wPos.x - mouseStartX;
+    const dy = wPos.y - mouseStartY;
+
+    // 1. 仮移動
     movingPiece.group.forEach(p => {
         p.X = p.startX + dx;
         p.Y = p.startY + dy;
     });
 
-    // 2. グループ全体のはみ出しをチェックして補正値を計算
-    const maxX = can.width - pieceSize * 1.5;
-    const maxY = can.height - pieceSize * 1.5;
-
-    let correctionX = 0;
-    let correctionY = 0;
-
-    // グループ内の全ピースについてはみ出しをチェック
-    movingPiece.group.forEach(p => {
-        if (p.X < 0) {
-            // 左にはみ出た分だけ押し戻す（最も大きい補正値を採用）
-            if (0 - p.X > correctionX) correctionX = 0 - p.X;
-        }
-        if (p.Y < 0) {
-            if (0 - p.Y > correctionY) correctionY = 0 - p.Y;
-        }
-        if (p.X > maxX) {
-            // 右にはみ出た分だけ引き戻す (負の値)
-            if (maxX - p.X < correctionX) correctionX = maxX - p.X;
-        }
-        if (p.Y > maxY) {
-            if (maxY - p.Y < correctionY) correctionY = maxY - p.Y;
-        }
-    });
-
-    // 3. 補正値を全員に適用
-    if (correctionX !== 0 || correctionY !== 0) {
-        movingPiece.group.forEach(p => {
-            p.X += correctionX;
-            p.Y += correctionY;
-        });
-    }
+    // 2. 補正 (無限キャンバスなので、極端なはみ出し以外は許容して良いかもだが、
+    // 一応パズルボード周辺から遠すぎると見失うので、ある程度のバウンダリはあっても良い。
+    // 今回は「広くする」のが目的なので、厳しい制限は外すか、緩める)
+    // 一旦制限ロジックはコメントアウトまたは緩める
 
     // ★Hook: Move
     if (typeof window.onPieceMove === 'function') window.onPieceMove(movingPiece);
+});
+
+window.addEventListener('mouseup', (ev) => {
+    if (view.isPanning) {
+        view.isPanning = false;
+        can.style.cursor = 'default';
+        return;
+    }
 });
 
 // ★離す処理（共通化）
