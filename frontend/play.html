@@ -3,116 +3,78 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>パズルプレイ - シングルモード</title>
+    <title>パズルプレイ</title>
     <link rel="stylesheet" href="/static/css/play.css">
-    <style>
-        /* プレイ画面専用のスタイル */
-        .header-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 20px;
-            background: #333;
-            color: white;
-        }
-
-        .timer-box {
-            font-size: 1.2rem;
-            font-weight: bold;
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 10px;
-        }
-
-        button {
-            padding: 8px 16px;
-            cursor: pointer;
-            border: none;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-
-        .btn-save {
-            background-color: #28a745;
-            color: white;
-        }
-
-        .btn-back {
-            background-color: #6c757d;
-            color: white;
-        }
-
-        .btn-reset {
-            background-color: #dc3545;
-            color: white;
-        }
-
-        #status-msg {
-            margin-left: 10px;
-            font-size: 0.9rem;
-            color: #ffc107;
-        }
-
-        #canvas-container {
-            width: 100%;
-            height: calc(100vh - 60px);
-            overflow: auto;
-            background-color: #eee;
-        }
-    </style>
+    <!-- Ionicons for clean UI icons -->
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
 </head>
 
 <body>
 
+    <!-- Top Center Toolbar -->
     <div class="header-controls">
-        <div class="timer-box">
-            時間: <span id="time">0</span> 秒
-            <span id="status-msg"></span>
-        </div>
+        <button class="toolbar-btn" onclick="backToGallery()" title="ギャラリーに戻る">
+            <ion-icon name="arrow-back"></ion-icon>
+        </button>
 
-        <div class="btn-group">
-            <button id="toggleCompletedBtn" class="btn-back" style="background-color: #17a2b8;">完成図見る</button>
-            <button class="btn-save" onclick="saveGame()">データを保存</button>
-            <button class="btn-reset" id="resetBtn">リセット</button>
-            <button class="btn-back" onclick="backToGallery()">保存して終了</button>
+        <div style="width: 1px; height: 24px; background: rgba(255,255,255,0.1); margin: 0 5px;"></div>
+
+        <button class="toolbar-btn" id="toggleCompletedBtn" title="完成図の表示/非表示">
+            <ion-icon name="image-outline"></ion-icon>
+        </button>
+        <button class="toolbar-btn" onclick="saveGame()" title="保存">
+            <ion-icon name="save-outline"></ion-icon>
+        </button>
+        <button class="toolbar-btn" id="resetBtn" title="リセット">
+            <ion-icon name="refresh-outline"></ion-icon>
+        </button>
+    </div>
+
+    <!-- Top Right Info Panel -->
+    <div class="info-panel">
+        <div class="timer-box">
+            <span id="time">0</span>
         </div>
+        <div id="status-msg" class="status-msg"></div>
     </div>
 
     <div id="canvas-container">
         <canvas id="can"></canvas>
     </div>
 
-    <!-- クリア画面モーダル -->
+    <!-- Clear Modal -->
     <div id="completionModal"
-        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; text-align:center; color:white;">
-        <div style="margin-top:20vh;">
-            <h1 style="font-size:4rem; color:#ffd700; text-shadow: 0 0 10px #ff0;">CLEAR!!</h1>
-            <div style="font-size:1.5rem; margin: 20px 0;">
-                <p>Time: <span id="modalTime" style="font-weight:bold; font-size:2rem;"></span> 秒</p>
-                <p style="font-size:1rem; color:#aaa;">Best: <span id="modalBest">--</span> 秒</p>
-                <p id="newRecordMsg" style="display:none; color:#ff4444; font-weight:bold; font-size:1.5rem;">★ New
-                    Record!!</p>
-            </div>
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; text-align:center; color:white; flex-direction: column; justify-content: center; align-items: center;">
+
+        <h1 style="font-size:4rem; color:#fbbf24; text-shadow: 0 0 20px rgba(251, 191, 36, 0.5); margin: 0;">CLEAR!!
+        </h1>
+
+        <div style="font-size:1.5rem; margin: 30px 0;">
+            <p>Time: <span id="modalTime" style="font-weight:bold; font-size:2.5rem; color: white;"></span></p>
+            <p style="font-size:1rem; color:#94a3b8; margin-top: 10px;">Best: <span id="modalBest">--</span></p>
+            <p id="newRecordMsg"
+                style="display:none; color:#f87171; font-weight:bold; font-size:1.5rem; margin-top: 15px;">★ New
+                Record!!</p>
+        </div>
+
+        <div style="display: flex; gap: 20px;">
             <button onclick="backToGallery()"
-                style="padding:15px 40px; font-size:1.2rem; background:#28a745; color:white; border:none; border-radius:30px; cursor:pointer;">
-                ギャラリーへ戻る
+                style="padding:15px 40px; font-size:1.1rem; background:transparent; border: 2px solid #22c55e; color:#22c55e; border-radius:30px; cursor:pointer; font-weight: bold; transition: all 0.2s;">
+                ギャラリーへ
             </button>
             <button onclick="location.reload()"
-                style="padding:15px 40px; font-size:1.2rem; background:#17a2b8; color:white; border:none; border-radius:30px; cursor:pointer; margin-left:20px;">
-                もう一度遊ぶ
+                style="padding:15px 40px; font-size:1.1rem; background:#22c55e; color:#0f172a; border:none; border-radius:30px; cursor:pointer; font-weight: bold; box-shadow: 0 0 15px rgba(34, 197, 94, 0.4);">
+                もう一度
             </button>
         </div>
     </div>
 
     <img id="completedImagePreview" style="display:none;">
 
-    <!-- 紙吹雪エフェクト (Confetti) -->
+    <!-- Effects -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-
     <script src="/static/js/puzzle_logic.js"></script>
-
     <script src="/static/js/single_play.js"></script>
 
 </body>

@@ -148,7 +148,7 @@ async function showCompletionUI(currentTime) {
     const newRecordMsg = document.getElementById('newRecordMsg');
 
     modalTime.textContent = currentTime;
-    modal.style.display = 'block';
+    modal.style.display = 'flex';
 
     try {
         const res = await fetch(`${API_BASE_URL}/puzzle/best?user_id=${userId}&puzzle_id=${currentPuzzleId}&difficulty=${currentDifficulty}`);
