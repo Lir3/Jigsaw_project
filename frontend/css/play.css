@@ -1,65 +1,174 @@
-/* 👈 中央配置のための追加スタイル */
+/* play.css - Tangle.io Style Redesign */
+
 body {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    /* 水平中央揃え */
-    min-height: 100vh;
-    /* 画面全体を高さの基準にする */
     margin: 0;
-    padding-top: 20px;
-    /* 上部に少し余白 */
+    padding: 0;
+    overflow: hidden;
+    /* キャンバスを全画面にするためスクロール禁止 */
+    background-color: #0f172a;
+    /* Dark Blue/Slate background */
+    color: #e2e8f0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100vw;
 }
 
-
-#puzzle-container {
-    /* コンテナの幅をCanvasの幅に合わせる（中央配置のため） */
-    display: inline-block;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    /* 見栄えのための影 */
+/* --- Canvas Area --- */
+#canvas-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    /* 最背面 */
+    background-color: #0f172a;
+    /* Canvas背景も合わせる */
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-/* 既存のスタイル */
-#shuffle {
-    width: 100px;
-    margin-left: 20px;
+#can {
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+    /* 浮き出るような影 */
 }
 
-#how-to-play {
-    margin-left: 20px;
+/* --- Floating Toolbar (Top Center) --- */
+.header-controls {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    display: flex;
+    gap: 10px;
+    padding: 10px 20px;
+    background: rgba(30, 41, 59, 0.8);
+    /* Semi-transparent dark slate */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
 }
 
-#time {
-    margin-left: 20px;
-    font-weight: bold;
+/* Button Styles in Toolbar */
+.toolbar-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: #94a3b8;
+    /* Muted text/icon color */
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
 }
 
-/* 完成図のドラッグ移動用スタイル */
+.toolbar-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.toolbar-btn svg {
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
+}
+
+/* Tooltip (optional, simple title attribute used for now) */
+
+/* --- Info Panel (Top Right) --- */
+.info-panel {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 100;
+    text-align: right;
+    pointer-events: none;
+    /* 下の要素をクリックできるように */
+}
+
+.timer-box {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #fbbf24;
+    /* Amber/Gold for Timer */
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    margin-bottom: 5px;
+}
+
+.status-msg,
+.member-list {
+    font-size: 0.9rem;
+    color: #94a3b8;
+}
+
+/* --- Completed Image Preview --- */
 #completedImagePreview {
     position: fixed;
-    /* 画面上に固定（スクロールしても追従） */
-    top: 60px;
-    /* 初期位置 Y */
+    top: 80px;
     left: 20px;
-    /* 初期位置 X */
-    z-index: 1000;
-    /* パズルより手前に表示 */
+    z-index: 90;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
     cursor: grab;
-    /* カーソルを「掴む手」に */
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-    /* 影をつけて浮いている感を出す */
-    border: 4px solid #fff;
-    /* 白枠 */
-    border-radius: 4px;
-    max-width: 300px;
-    /* 最大サイズ制限 */
-    display: none;
-    /* 初期状態は非表示（JSで制御） */
+    max-width: 250px;
+    transition: opacity 0.3s;
     user-select: none;
-    /* 選択不可にする */
 }
 
 #completedImagePreview:active {
     cursor: grabbing;
-    /* ドラッグ中は「掴んでいる手」に */
+}
+
+/* --- Chat Container (Bottom Left for Tangle style, or keep Bottom Right) --- */
+/* Tangle.io often keeps chat minimal. We'll keep it bottom right or left. Let's stick to bottom left for separation from game UI if desired, or bottom right. Existing was bottom right. */
+.chat-container {
+    /* Styles handled in multi_play.html mostly, but let's override for dark theme */
+    background: rgba(30, 41, 59, 0.9) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #e2e8f0;
+}
+
+.chat-header {
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chat-message {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: none !important;
+    color: #e2e8f0;
+}
+
+.chat-message.own {
+    background: rgba(59, 130, 246, 0.2) !important;
+    /* Blue tint */
+}
+
+.chat-input-area {
+    background: transparent !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+#chat-input {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+/* --- Modals --- */
+#completionModal {
+    backdrop-filter: blur(5px);
 }

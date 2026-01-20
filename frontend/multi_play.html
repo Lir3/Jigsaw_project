@@ -3,209 +3,91 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>パズルプレイ - マルチプレイ</title>
+    <title>マルチプレイ</title>
     <link rel="stylesheet" href="/static/css/play.css">
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
     <style>
-        .header-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 20px;
-            background: #333;
-            color: white;
-        }
-
-        .timer-box {
-            font-size: 1.2rem;
-            font-weight: bold;
-        }
-
+        /* Multi-play specific overrides if needed */
         .room-info {
             display: flex;
-            gap: 20px;
-            align-items: center;
-        }
-
-        #member-list {
-            font-size: 0.9rem;
-            color: #aaa;
-        }
-
-        #canvas-container {
-            width: 100%;
-            height: calc(100vh - 60px);
-            overflow: auto;
-            background-color: #eee;
-            position: relative;
-        }
-
-        #waiting-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            z-index: 100;
-        }
-
-        /* チャットスタイル */
-        .chat-container {
-            position: fixed;
-            bottom: 0;
-            right: 20px;
-            width: 350px;
-            background: white;
-            border: 1px solid #ccc;
-            border-radius: 8px 8px 0 0;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-        }
-
-        .chat-header {
-            padding: 10px 15px;
-            background: #333;
-            color: white;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            user-select: none;
-            border-radius: 8px 8px 0 0;
-        }
-
-        .chat-header:hover {
-            background: #444;
-        }
-
-        .chat-body {
-            max-height: 300px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        #chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 10px;
-            max-height: 250px;
-            background: #f9f9f9;
-        }
-
-        .chat-message {
-            margin-bottom: 8px;
-            padding: 8px;
-            border-radius: 4px;
-            background: white;
-            border: 1px solid #eee;
-            font-size: 0.9rem;
-        }
-
-        .chat-message.own {
-            background: #e3f2fd;
-            border-color: #90caf9;
-        }
-
-        .chat-message strong {
-            color: #1976d2;
-            font-size: 0.85rem;
-        }
-
-        .chat-message .time {
-            color: #999;
-            font-size: 0.75rem;
-            margin-left: 5px;
-        }
-
-        .chat-input-area {
-            display: flex;
-            padding: 10px;
-            border-top: 1px solid #eee;
-            background: white;
-        }
-
-        #chat-input {
-            flex: 1;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            margin-right: 8px;
-        }
-
-        .chat-input-area button {
-            padding: 8px 16px;
-            background: #28a745;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .chat-input-area button:hover {
-            background: #218838;
-        }
-
-        .chat-container.collapsed .chat-body {
-            display: none;
+            align-items: flex-end;
         }
     </style>
 </head>
 
 <body>
 
+    <!-- Top Center Toolbar -->
     <div class="header-controls">
-        <div class="room-info">
-            <div class="timer-box">
-                時間: <span id="time">0</span> 秒
-            </div>
-            <div id="member-list">
-                参加者: <span id="members-count">1</span>名
-            </div>
-        </div>
+        <button class="toolbar-btn" onclick="exitRoom()" title="退出する">
+            <ion-icon name="log-out-outline" style="transform: rotate(180deg);"></ion-icon>
+        </button>
 
-        <div class="btn-group">
-            <button id="toggleCompletedBtn" class="btn-back"
-                style="background: #17a2b8; margin-right: 10px;">完成図見る</button>
-            <button class="btn-back" onclick="exitRoom()">退出する</button>
+        <div style="width: 1px; height: 24px; background: rgba(255,255,255,0.1); margin: 0 5px;"></div>
+
+        <button class="toolbar-btn" id="toggleCompletedBtn" title="完成図の表示/非表示">
+            <ion-icon name="image-outline"></ion-icon>
+        </button>
+
+        <!-- Invite/People Icon (Optional future feature placeholder or member toggle) -->
+        <button class="toolbar-btn" style="cursor: default;" title="マルチプレイ中">
+            <ion-icon name="people-outline"></ion-icon>
+        </button>
+    </div>
+
+    <!-- Top Right Info Panel -->
+    <div class="info-panel">
+        <div class="timer-box">
+            <span id="time">0</span>
+        </div>
+        <div id="member-list" class="member-list">
+            <ion-icon name="person" style="vertical-align: middle; margin-right: 5px;"></ion-icon>
+            <span id="members-count">1</span>
         </div>
     </div>
+
+    <!-- Waiting Overlay -->
+    <div id="waiting-overlay" style="display:none;"></div>
 
     <div id="canvas-container">
         <canvas id="can"></canvas>
     </div>
 
-    <!-- チャットエリア -->
+    <!-- Chat Area -->
     <div id="chat-container" class="chat-container">
         <div class="chat-header" onclick="toggleChat()">
-            <span>💬 チャット</span>
+            <span>💬 Chat</span>
             <span id="chat-toggle">▼</span>
         </div>
         <div id="chat-body" class="chat-body">
             <div id="chat-messages"></div>
             <div class="chat-input-area">
-                <input type="text" id="chat-input" placeholder="メッセージを入力..." maxlength="200">
-                <button onclick="sendChatMessage()">送信</button>
+                <input type="text" id="chat-input" placeholder="Message..." maxlength="200">
+                <button onclick="sendChatMessage()"
+                    style="background:transparent; border:none; cursor:pointer; color:#22c55e;">
+                    <ion-icon name="send" style="font-size: 1.2rem;"></ion-icon>
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- クリア画面 (シングルと同じ) -->
+    <!-- Clear Modal -->
     <div id="completionModal"
-        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; text-align:center; color:white;">
-        <div style="margin-top:20vh;">
-            <h1 style="font-size:4rem; color:#ffd700; text-shadow: 0 0 10px #ff0;">Completed!!</h1>
-            <div style="font-size:1.5rem; margin: 20px 0;">
-                <p>Time: <span id="modalTime" style="font-weight:bold; font-size:2rem;"></span> 秒</p>
-            </div>
-            <button onclick="location.href='/room/list'"
-                style="padding:15px 40px; font-size:1.2rem; background:#28a745; color:white; border:none; border-radius:30px; cursor:pointer;">
-                ルーム一覧へ
-            </button>
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; text-align:center; color:white; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+
+        <h1 style="font-size:4rem; color:#fbbf24; text-shadow: 0 0 20px rgba(251, 191, 36, 0.5); margin: 0;">Completed!!
+        </h1>
+
+        <div style="font-size:1.5rem; margin: 30px 0;">
+            <p>Time: <span id="modalTime" style="font-weight:bold; font-size:2.5rem; color: white;"></span></p>
         </div>
+
+        <button onclick="location.href='/room/list-page'"
+            style="padding:15px 40px; font-size:1.1rem; background:transparent; border: 2px solid #22c55e; color:#22c55e; border-radius:30px; cursor:pointer; font-weight: bold; transition: all 0.2s;">
+            ルーム一覧へ
+        </button>
     </div>
 
     <img id="completedImagePreview" style="display:none;">
