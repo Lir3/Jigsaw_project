@@ -165,6 +165,7 @@ async function initPuzzle(imageUrl, savedPiecesData, difficultyArg) {
         completedPreview.src = completedCanvas.toDataURL();
     }
 
+    isGameCompleted = false; // 初期化時にフラグをリセット
     pieces = [];
     let idx = 0;
     for (let row = 0; row < rowMax; row++) {
@@ -676,6 +677,8 @@ function snapGroupToBoard(piece) {
 
 // --- 完成チェック ---
 function check() {
+    if (!pieces || pieces.length === 0) return; // ピースがない場合は判定しない
+
     let ok = pieces.every(p => p.Check());
     if (ok) {
         if (timer) clearInterval(timer);
