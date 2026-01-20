@@ -356,6 +356,12 @@ async function initPuzzle(imageUrl, savedPiecesData, difficultyArg) {
     };
 
     drawAll();
+
+    // Initial Count
+    if (typeof updatePieceCount === 'function') updatePieceCount();
+
+    // Timer Start (if not multiplayer controlled)
+    // ...
 };
 
 // 画像読み込み関数
@@ -822,6 +828,62 @@ function handleDrop() {
 
     movingPiece = null;
     check();
+}
+
+// --- 残りピース数更新 ---
+function updatePieceCount() {
+    const el = document.getElementById('piece-remaining');
+    if (!el) return;
+
+    if (!pieces || pieces.length === 0) {
+        el.textContent = "--";
+        return;
+    }
+
+    // 残り = ロックされていないグループの数 (あるいはピース単体の数？)
+    // ユーザー要望: "残りのピース数" -> 未完成のピースの数
+    // pieces配列には全ピースが入っている。
+    // IsLocked=true のものは完成済み。
+    // IsLocked=false のものが未完成。
+
+    const remaining = pieces.filter(p => !p.IsLocked).length;
+    el.textContent = `${remaining}`;
+}
+
+// Check function updated to call updatePieceCount
+function check() {
+    updatePieceCount(); // Update count every check
+
+    // Check completion
+    const allLocked = pieces.every(p => p.IsLocked);
+    if (allLocked && !isGameCompleted) {
+        isGameCompleted = true;
+
+        // Stop Timer
+        if (timer) clearInterval(timer);
+
+        // Final Draw
+        drawAll();
+
+        // Show UI
+        if (typeof showCompletionUI === 'function') {
+            // In Single Play, 'time' is seconds (number)
+            // In Multi Play, 'time' is string (sometimes) or synced number?
+            // Actually currently 'time' var is number in single logic.
+            // Formatting to time string if needed?
+            // UI expects string possibly "123" or "2:03".
+            // Let's format it nicely if it's a number.
+            showCompletionUI(formatTime(time));
+        }
+    }
+}
+
+function formatTime(s) {
+    // If s is string, return logic
+    if (typeof s === 'string') return s;
+    if (isNaN(s)) return "0秒";
+    // Simple seconds for now as requested
+    return s + "秒";
 }
 
 // (旧リスナー削除済み)
