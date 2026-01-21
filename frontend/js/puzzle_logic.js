@@ -866,6 +866,11 @@ function check() {
         // Final Draw
         drawAll();
 
+        // 🚨 single_play.jsで定義された保存関数を呼び出す
+        if (typeof saveGame === 'function') {
+            saveGame();
+        }
+
         // Show UI
         if (typeof showCompletionUI === 'function') {
             // In Single Play, 'time' is seconds (number)
@@ -966,30 +971,4 @@ function snapGroupToBoard(piece) {
 }
 
 // --- 完成チェック ---
-function check() {
-    if (!pieces || pieces.length === 0) return; // ピースがない場合は判定しない
-
-    let ok = pieces.every(p => p.Check());
-    if (ok) {
-        if (timer) clearInterval(timer);
-        timer = null;
-        $time.style.color = '#f00';
-        $time.innerHTML = `完了! ${time} 秒`;
-
-        isGameCompleted = true; // フラグを立てる
-
-        // 🚨 single_play.jsで定義された保存関数を呼び出す
-        if (typeof saveGame === 'function') {
-            saveGame();
-        }
-
-        if (typeof showCompletionUI === 'function') {
-            showCompletionUI(time);
-        } else {
-            // Fallback
-            setTimeout(() => {
-                alert(`パズル完成！タイム: ${time} 秒`);
-            }, 600);
-        }
-    }
-}
+// (Old Check function removed)

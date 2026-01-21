@@ -104,10 +104,8 @@ toggleBtn.addEventListener('click', () => {
     // 現在の display スタイルを確認して切り替える
     if (previewImgElement.style.display === 'none' || previewImgElement.style.display === '') {
         previewImgElement.style.display = 'block'; // 表示
-        toggleBtn.textContent = '完成図を隠す';     // ボタンの文字変更（任意）
     } else {
         previewImgElement.style.display = 'none';  // 非表示
-        toggleBtn.textContent = '完成図を見る';     // ボタンの文字変更（任意）
     }
 });
 
