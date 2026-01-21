@@ -331,10 +331,22 @@ function handleRemoteUnlock(msg) {
     if (p) {
         p.isHeldByOther = false;
         // 位置同期
+        // 位置同期
         p.X = msg.x;
         p.Y = msg.y;
         p.Rotation = msg.rotation;
+
+        // ★ 吸着チェック (相手がスナップさせた場合、座標が正しいはずなのでここでローカルもスナップさせる)
+        if (typeof snapGroupToBoard === 'function') {
+            snapGroupToBoard(p);
+        }
+
         drawAll();
+
+        // ★ ピース数更新
+        if (typeof updatePieceCount === 'function') {
+            updatePieceCount();
+        }
     }
 }
 
@@ -358,6 +370,10 @@ function handleRemoteMerge(msg) {
         if (typeof mergeGroups === 'function') {
             mergeGroups(p1, p2);
             drawAll();
+            // ★ ピース数更新
+            if (typeof updatePieceCount === 'function') {
+                updatePieceCount();
+            }
         }
     }
 }

@@ -6,6 +6,11 @@ let uploadedImageBase64 = null;
 input.addEventListener('change', (event) => {
     const file = event.target.files[0];
     if (!file) return;
+
+    // Show filename
+    const nameEl = document.getElementById('fileName');
+    if (nameEl) nameEl.textContent = file.name;
+
     const reader = new FileReader();
     reader.onload = (e) => {
         uploadedImageBase64 = e.target.result;
@@ -15,9 +20,8 @@ input.addEventListener('change', (event) => {
 
 // パズル開始
 startBtn.addEventListener('click', () => {
+    // 画像チェック
     if (!uploadedImageBase64) {
-        // 画像が選択されていない場合はアラート
-        // ※デバッグ用にデフォルト画像があるならスルーでも可
         if (!localStorage.getItem('uploadedImage')) {
             alert("画像を選択してください。");
             return;
@@ -27,12 +31,35 @@ startBtn.addEventListener('click', () => {
         localStorage.setItem('uploadedImage', uploadedImageBase64);
     }
 
-    // 選択した難易度も保存
-    const difficulty = document.getElementById('difficulty').value;
+    // 難易度（スライダーから取得）
+    const difficulty = document.getElementById('difficultySlider').value;
     localStorage.setItem('puzzleDifficulty', difficulty);
 
-    // ページリロードして play.js で読み込み
-    window.location.reload();
+    // ★ UI切り替え: 設定画面を非表示、ゲーム画面を表示
+    // (upload.htmlはSingle Pageっぽく振る舞っているのでリロードするとまた設定画面に戻ってしまう)
+    // リロードせずに開始するか、リロード後に状態復元するか？
+    // 従来のJSは `window.location.reload()` していた。
+    // リロードすると initPuzzle が走る。
+    // その際、startTimerも走る。
+    // しかしリロードするとHTMLが初期状態（Setup表示）に戻る。
+    // これではゲームができない。
+
+    // 解決策: localStorageにフラグを立てるか、リロードせずに initPuzzle を呼ぶ。
+    // 既存コードの `window.addEventListener('load', ...)` はリロード前提。
+    // リロードをやめて、その場で initPuzzle を呼ぶ形に変更する。
+
+    // Setup非表示
+    document.getElementById('setup-container').style.display = 'none';
+    document.querySelector('.header-controls').style.display = 'flex';
+
+    // パズル初期化
+    if (typeof initPuzzle === 'function') {
+        // uploadedImageBase64 または localStorage
+        const img = uploadedImageBase64 || localStorage.getItem('uploadedImage');
+        initPuzzle(img, parseInt(difficulty)).then(() => {
+            if (typeof startTimer === 'function') startTimer();
+        });
+    }
 });
 
 // --- 完成図ドラッグ機能 ---
@@ -85,27 +112,10 @@ toggleBtn.addEventListener('click', () => {
 });
 
 // --- ゲーム初期化 (puzzle_logic.js を使用) ---
+// window.addEventListener('load') での自動初期化は廃止し、スタートボタン押下時に実行する
+// これにより、常に設定画面からスタートできる
+/*
 window.addEventListener('load', async () => {
-    // puzzle_logic.js の initPuzzle があるか確認
-    if (typeof initPuzzle !== 'function') {
-        console.warn("initPuzzle function is not defined. puzzle_logic.js may not be loaded.");
-        return;
-    }
-
-    // アップロードされた画像があるか確認
-    const uploaded = localStorage.getItem('uploadedImage');
-    if (!uploaded) return;
-
-    // パズル初期化 (保存データは無いので null or [])
-    // ※ difficultyは puzzle_logic.js 内で localStorage から読み込まれる
-    console.log("Initializing puzzle via upload.js...");
-    try {
-        await initPuzzle(uploaded, null);
-        // ★ ゲストプレイでもタイマーを開始する
-        if (typeof startTimer === 'function') {
-            startTimer();
-        }
-    } catch (e) {
-        console.error("Error initializing puzzle:", e);
-    }
+   // ... removed ...
 });
+*/

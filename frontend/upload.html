@@ -4,38 +4,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>ジグソーパズルアップロード</title>
-    <link rel="stylesheet" href="/static/css/upload.css">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>ゲストプレイ</title>
+    <link rel="stylesheet" href="/static/css/play.css">
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <!-- Override play.css slightly for setup modal -->
+    <style>
+        #setup-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.95);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        .setup-box {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 16px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .header-controls {
+            display: none;
+        }
+
+        /* Show after start */
+    </style>
 </head>
 
 <body>
-    <h1>ジグソーパズル</h1>
 
-    <div id="controls">
-        <label for="imageInput">画像を選択：</label>
-        <input type="file" id="imageInput" accept="image/*"><br><br>
+    <!-- Setup Screen (Initial) -->
+    <div id="setup-container">
+        <div class="setup-box">
+            <h1>ゲストプレイ設定</h1>
+            <p style="margin-bottom: 20px; color: #94a3b8;">画像をアップロードしてパズルを開始します</p>
 
-        <label for="difficulty">難易度：</label>
-        <select id="difficulty">
-            <option value="easy">簡単（4×4）</option>
-            <option value="normal" selected>普通（6×6）</option>
-            <option value="hard">難しい（8×8）</option>
-        </select><br><br>
+            <div style="margin-bottom: 20px;">
+                <label for="imageInput"
+                    style="cursor:pointer; background:#3b82f6; padding:10px 20px; border-radius:8px; display:inline-block;">
+                    画像を選択
+                    <input type="file" id="imageInput" accept="image/*" style="display:none;">
+                </label>
+                <div id="fileName" style="margin-top:10px; font-size:0.9rem;"></div>
+            </div>
 
-        <button id="startBtn">パズル開始</button>
-        <button id="resetBtn">リセット</button>
-        <button id="toggleCompletedBtn">完成図 ON/OFF</button>
-        <button id="hintBtn">ヒント</button>
-        <span id="time" style="display:inline; margin-left:10px; font-weight:bold;">0</span> 秒
-        <button onclick="location.href='/'" style="margin-left: 20px;">トップへ戻る</button>
+            <div style="margin-bottom: 30px;">
+                <label>ピース数: <span id="pieceCountVal" style="font-weight:bold;">36</span></label>
+                <br>
+                <input type="range" id="difficultySlider" min="4" max="40" step="1" value="6"
+                    oninput="document.getElementById('pieceCountVal').textContent = Math.pow(this.value, 2)"
+                    style="width: 200px; cursor: pointer;">
+                <!-- Hidden select for compatibility if needed, but we used localstorage logic in upload.js -->
+                <!-- Actually upload.js uses #difficulty select. We should change upload.js to use slider or map here. -->
+                <!-- Let's keep a hidden select to minimize upload.js changes OR update upload.js -->
+                <!-- I will update upload.js. -->
+            </div>
+
+            <button id="startBtn"
+                style="padding:15px 40px; font-size:1.2rem; background:#22c55e; color:white; border:none; border-radius:30px; cursor:pointer; font-weight:bold;">
+                START
+            </button>
+            <br>
+            <button onclick="location.href='/'"
+                style="margin-top:20px; background:transparent; border:none; color:#94a3b8; cursor:pointer; text-decoration:underline;">
+                トップへ戻る
+            </button>
+        </div>
     </div>
 
-    <canvas id="can"></canvas>
+    <!-- Game UI (Copied from play.html) -->
+    <!-- Top Center Toolbar -->
+    <div class="header-controls" id="game-header">
+        <button class="toolbar-btn" onclick="location.href='/'" title="トップへ戻る">
+            <ion-icon name="arrow-back"></ion-icon>
+        </button>
 
-    <img id="completedImagePreview" draggable="false">
+        <div style="width: 1px; height: 24px; background: rgba(255,255,255,0.1); margin: 0 5px;"></div>
 
-    <script src="/static/js/upload.js"></script>
+        <!-- Timer -->
+        <div class="timer-box"
+            style="margin: 0 10px; font-weight: bold; font-size: 1.2rem; min-width: 80px; text-align: center;">
+            <span id="time">0</span><span style="font-size: 0.8rem; margin-left: 2px;">秒</span>
+        </div>
+
+        <div style="width: 1px; height: 24px; background: rgba(255,255,255,0.1); margin: 0 5px;"></div>
+
+        <div style="margin: 0 10px; font-weight: bold; font-size: 1.2rem; color: #60a5fa; min-width: 60px; text-align: center;"
+            title="残りピース数">
+            <ion-icon name="extension-puzzle-outline" style="vertical-align: -2px; margin-right:4px;"></ion-icon>
+            <span id="piece-remaining">--</span>
+        </div>
+
+        <div style="width: 1px; height: 24px; background: rgba(255,255,255,0.1); margin: 0 5px;"></div>
+
+        <button class="toolbar-btn" onclick="zoomOut()" title="ズームアウト">
+            <ion-icon name="remove-circle-outline"></ion-icon>
+        </button>
+        <button class="toolbar-btn" onclick="zoomIn()" title="ズームイン">
+            <ion-icon name="add-circle-outline"></ion-icon>
+        </button>
+
+        <div style="width: 1px; height: 24px; background: rgba(255,255,255,0.1); margin: 0 5px;"></div>
+
+        <button class="toolbar-btn" id="hintBtn" title="ヒント (1ピース埋める)">
+            <ion-icon name="bulb-outline"></ion-icon>
+        </button>
+        <button class="toolbar-btn" id="toggleCompletedBtn" title="完成図の表示/非表示">
+            <ion-icon name="image-outline"></ion-icon>
+        </button>
+        <button class="toolbar-btn" id="resetBtn" title="リセット">
+            <ion-icon name="refresh-outline"></ion-icon>
+        </button>
+    </div>
+
+    <!-- Top Right Info Panel -->
+    <div class="info-panel">
+        <div id="status-msg" class="status-msg">Guest Play</div>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="can"></canvas>
+    </div>
+
+    <!-- Clear Modal -->
+    <div id="completionModal"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; text-align:center; color:white; flex-direction: column; justify-content: center; align-items: center;">
+        <h1 style="font-size:4rem; color:#fbbf24; text-shadow: 0 0 20px rgba(251, 191, 36, 0.5); margin: 0;">CLEAR!!
+        </h1>
+        <div style="font-size:1.5rem; margin: 30px 0;">
+            <p>Time: <span id="modalTime" style="font-weight:bold; font-size:2.5rem; color: white;"></span></p>
+        </div>
+        <div style="display: flex; gap: 20px;">
+            <button onclick="location.reload()"
+                style="padding:15px 40px; font-size:1.1rem; background:#22c55e; color:#0f172a; border:none; border-radius:30px; cursor:pointer; font-weight: bold; box-shadow: 0 0 15px rgba(34, 197, 94, 0.4);">
+                もう一度
+            </button>
+            <button onclick="location.href='/'"
+                style="padding:15px 40px; font-size:1.1rem; background:transparent; border: 2px solid #22c55e; color:#22c55e; border-radius:30px; cursor:pointer; font-weight: bold; transition: all 0.2s;">
+                トップへ
+            </button>
+        </div>
+    </div>
+
+    <img id="completedImagePreview" style="display:none;">
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="/static/js/puzzle_logic.js"></script>
+    <script src="/static/js/upload.js"></script>
 </body>
 
 </html>
