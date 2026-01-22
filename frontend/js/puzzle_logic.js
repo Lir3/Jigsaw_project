@@ -224,11 +224,20 @@ async function initPuzzle(imageUrl, savedPiecesData, difficultyArg) {
     }
 
     // 2. 縦横比に基づいた分割数とピースサイズの決定
+    // ユーザーは「ピース数(difficulty^2)」を期待しているため、
+    // アスペクト比に関わらず総数が difficulty^2 に近くなるように調整する
+    const targetTotal = basePieceCount * basePieceCount;
+
     if (aspectRatio >= 1) {
-        rowMax = basePieceCount;
+        // 横長: row * (row * aspect) = total => row^2 = total / aspect
+        rowMax = Math.max(2, Math.round(Math.sqrt(targetTotal / aspectRatio)));
         colMax = Math.round(rowMax * aspectRatio);
     } else {
-        colMax = basePieceCount;
+        // 縦長: col * (col / aspect) = total => col^2 = total * aspect (since aspect < 1, aspect = w/h)
+        // Wait, aspect = w/h. 
+        // height = width / aspect.
+        // col * (col / aspect) = total => col^2 = total * aspect. Correct.
+        colMax = Math.max(2, Math.round(Math.sqrt(targetTotal * aspectRatio)));
         rowMax = Math.round(colMax / aspectRatio);
     }
 
