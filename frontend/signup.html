@@ -35,38 +35,55 @@
   </div>
 
   <script>
-    // --- ユーザー登録処理 ---
-    document.getElementById("signupForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const formData = new FormData(e.target);
+  // --- ユーザー登録処理 ---
+  document.getElementById("signupForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
 
-      try {
-        const res = await fetch("/user/signup", {
-          method: "POST",
-          body: formData
-        });
-        const data = await res.json();
-        document.getElementById("result").innerText = data.message || data.detail || "登録完了";
-      } catch (err) {
-        document.getElementById("result").innerText = "通信エラー: " + err;
+    try {
+      const res = await fetch("/user/signup", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+      const result = document.getElementById("result");
+
+      if (res.ok) {
+        result.style.color = "green";
+        result.innerText = "登録完了！ログイン画面に移動します…";
+
+        // 2秒後にログイン画面へ
+        setTimeout(() => {
+          window.location.href = "/user/login";
+        }, 2000);
+
+      } else {
+        result.style.color = "red";
+        result.innerText = data.detail || "登録失敗";
       }
-    });
 
-    // --- パスワードの表示/非表示切り替え ---
-    const toggleBtn = document.getElementById("togglePassword");
-    const passwordField = document.getElementById("password");
+    } catch (err) {
+      document.getElementById("result").innerText = "通信エラー: " + err;
+    }
+  });
 
-    toggleBtn.addEventListener("click", () => {
-      const isHidden = passwordField.type === "password";
-      passwordField.type = isHidden ? "text" : "password";
-      toggleBtn.textContent = isHidden ? "🙈" : "👁";
-    });
+  // --- パスワードの表示/非表示切り替え ---
+  const toggleBtn = document.getElementById("togglePassword");
+  const passwordField = document.getElementById("password");
 
-    // --- 戻るボタン ---
-    document.getElementById("backBtn").addEventListener("click", () => {
-      window.location.href = "/";
-    });
-  </script>
+  toggleBtn.addEventListener("click", () => {
+    const isHidden = passwordField.type === "password";
+    passwordField.type = isHidden ? "text" : "password";
+    toggleBtn.textContent = isHidden ? "🙈" : "👁";
+  });
+
+  // --- 戻るボタン ---
+  document.getElementById("backBtn").addEventListener("click", () => {
+    window.location.href = "/";
+  });
+</script>
+
 </body>
 
 </html>
