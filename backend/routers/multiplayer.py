@@ -196,14 +196,16 @@ async def puzzle_websocket(websocket: WebSocket, room_id: str, user_id: str):
     await manager.connect(room_id, websocket, user_id)
     
     # DBからルーム情報を取得してホストを特定
-    from .room import supabase
     try:
-        room_data = supabase.table("rooms").select("host_user_id, difficulty").eq("id", room_id).single().execute()
+        room_data = supabase.table("rooms").select("host_user_id, difficulty, image_url").eq("id", room_id).single().execute()
         creator_id = room_data.data.get("host_user_id") if room_data.data else None
         
         # 難易度を初期化時に保存
-        if room_data.data and room_data.data.get("difficulty"):
-            game_state.set_difficulty(room_id, room_data.data.get("difficulty"))
+        if room_data.data:
+            if room_data.data.get("difficulty"):
+                game_state.set_difficulty(room_id, room_data.data.get("difficulty"))
+            if room_data.data.get("image_url"):
+                game_state.set_image(room_id, room_data.data.get("image_url"))
             
         game_state.init_room(room_id, creator_id)  # DBのホストを使用
     except Exception as e:

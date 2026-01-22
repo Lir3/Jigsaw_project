@@ -83,11 +83,11 @@
         const uploadData = await uploadRes.json();
         const imageUrl = uploadData.url;
 
-        // 2. ルーム作成 (画像URLは送らず、RoomIDだけ取得)
-        // ※ API側には画像URLを保存するカラムがないため、localStorage経由でホストが持ち運ぶ
-        // (理想的には rooms テーブルに image_url カラムを追加すべき)
+        // 2. ルーム作成 (画像URLを付与)
+        formData.append("image_url", imageUrl);
+        // 不要なファイルデータは削除（送信データ量を減らすため）
+        formData.delete("image");
 
-        // formDataからimageを除外するか、そのまま送っても無視されるだけなのでOK
         const res = await fetch("/room/create", {
           method: "POST",
           headers: {
