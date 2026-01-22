@@ -29,8 +29,11 @@ class CreateSessionRequest(BaseModel):
 # --- API エンドポイント ---
 
 @router.get("/masters")
-def get_puzzle_masters():
-    res = supabase.table("puzzle_masters").select("*").execute()
+def get_puzzle_masters(user_id: str = None):
+    query = supabase.table("puzzle_masters").select("*")
+    if user_id:
+        query = query.eq("user_id", user_id)
+    res = query.execute()
     return res.data
 
 @router.get("/history/{user_id}")

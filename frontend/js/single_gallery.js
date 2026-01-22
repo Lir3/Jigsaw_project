@@ -22,7 +22,7 @@ async function loadGallery() {
 
     // 1. パズルマスターデータ取得 (新しく始める)
     try {
-        const mastersRes = await fetch(`${API_BASE_URL}/puzzle/masters`);
+        const mastersRes = await fetch(`${API_BASE_URL}/puzzle/masters?user_id=${userId}`);
         const masters = await mastersRes.json();
 
         // 修正ポイント：カード内に削除ボタンを追加し、onclickの伝搬を防ぐ
