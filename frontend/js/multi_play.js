@@ -337,8 +337,15 @@ function handleRemoteUnlock(msg) {
         p.Rotation = msg.rotation;
 
         // ★ 吸着チェック (相手がスナップさせた場合、座標が正しいはずなのでここでローカルもスナップさせる)
+        // ただし、無条件に吸着させると「適当に離した」場合も吸着してしまうので、距離判定を行う
         if (typeof snapGroupToBoard === 'function') {
-            snapGroupToBoard(p);
+            const snapDist = (typeof pieceSize !== 'undefined' ? pieceSize : 80) / 3;
+            const distToGoalX = Math.abs(p.X - p.OriginalCol * (typeof pieceSize !== 'undefined' ? pieceSize : 80));
+            const distToGoalY = Math.abs(p.Y - p.OriginalRow * (typeof pieceSize !== 'undefined' ? pieceSize : 80));
+
+            if (distToGoalX < snapDist && distToGoalY < snapDist) {
+                snapGroupToBoard(p);
+            }
         }
 
         drawAll();
