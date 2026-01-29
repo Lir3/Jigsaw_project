@@ -32,12 +32,13 @@
             <h3>難易度を選択</h3>
             <p>パズルの難易度を選んでください</p>
             <div style="margin-bottom: 20px;">
-                <label>ピース数: <span id="pieceCountVal" style="font-weight:bold; font-size:1.2rem;">36</span></label>
+                <label>分割数: <span id="pieceCountDesc" style="font-weight:bold; font-size:1.2rem;">6x6</span> (約<span
+                        id="pieceCountVal">36</span>ピース)</label>
                 <br>
                 <input type="range" id="difficultySlider" min="4" max="40" step="1" value="6"
-                    oninput="document.getElementById('pieceCountVal').textContent = Math.pow(this.value, 2)"
+                    oninput="const val = this.value; document.getElementById('pieceCountVal').textContent = Math.pow(val, 2); document.getElementById('pieceCountDesc').textContent = val + 'x' + val;"
                     style="width: 80%; cursor: pointer;">
-                <p style="font-size:0.8rem; color:#666;">※スライダーの値は1辺のピース数です (4=16, 6=36, 40=1600)</p>
+                <p style="font-size:0.8rem; color:#666;">※スライダーの値は分割数(グリッド)を指定します</p>
             </div>
             <div style="display: flex; justify-content: space-around;">
                 <button onclick="confirmStartGame()"

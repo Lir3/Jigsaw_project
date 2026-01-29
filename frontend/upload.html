@@ -61,15 +61,13 @@
             </div>
 
             <div style="margin-bottom: 30px;">
-                <label>ピース数: <span id="pieceCountVal" style="font-weight:bold;">36</span></label>
+                <label>分割数: <span id="pieceCountDesc" style="font-weight:bold; font-size:1.2rem;">6x6</span> (約<span
+                        id="pieceCountVal">36</span>ピース)</label>
                 <br>
                 <input type="range" id="difficultySlider" min="4" max="40" step="1" value="6"
-                    oninput="document.getElementById('pieceCountVal').textContent = Math.pow(this.value, 2)"
+                    oninput="const val = this.value; document.getElementById('pieceCountVal').textContent = Math.pow(val, 2); document.getElementById('pieceCountDesc').textContent = val + 'x' + val;"
                     style="width: 200px; cursor: pointer;">
-                <!-- Hidden select for compatibility if needed, but we used localstorage logic in upload.js -->
-                <!-- Actually upload.js uses #difficulty select. We should change upload.js to use slider or map here. -->
-                <!-- Let's keep a hidden select to minimize upload.js changes OR update upload.js -->
-                <!-- I will update upload.js. -->
+                <p style="font-size:0.8rem; color:#666;">※スライダーの値は分割数(グリッド)を指定します</p>
             </div>
 
             <button id="startBtn"

@@ -528,22 +528,91 @@ window.addEventListener('dblclick', (ev) => {
 });
 
 // --- シャッフル ---
+// --- シャッフル (初期分散) ---
 function shuffleInitial() {
     if (!pieces || pieces.length === 0) return;
-    const shuffleAreaStartX = colMax * pieceSize + pieceSize / 2;
-    const shuffleAreaStartY = pieceSize / 2;
-    const shuffleAreaWidth = can.width - shuffleAreaStartX - pieceSize;
-    const shuffleAreaHeight = can.height - shuffleAreaStartY - pieceSize;
+
+    // パズルエリアの定義 (中央付近)
+    const boardW = pieceSize * colMax;
+    const boardH = pieceSize * rowMax;
+    const boardX = (can.width - boardW) / 2; // view.x, view.yに依存せずcanvas上の配置領域を計算
+    const boardY = (can.height - boardH) / 2;
+
+    // 4つのゾーン (Top, Bottom, Left, Right)
+    // 画面外にはみ出しすぎないようにマージンを持たせる
+    const margin = pieceSize * 1.5;
+
+    // ゾーンの定義 (Canvas座標系)
+    // Top: y < boardY
+    // Bottom: y > boardY + boardH
+    // Left: x < boardX
+    // Right: x > boardX + boardW
 
     pieces.forEach(piece => {
-        piece.X = shuffleAreaStartX + Math.random() * (shuffleAreaWidth - pieceSize);
-        piece.Y = shuffleAreaStartY + Math.random() * (shuffleAreaHeight - pieceSize);
+        const zone = Math.floor(Math.random() * 4); // 0:Top, 1:Bottom, 2:Left, 3:Right
+
+        let minX, maxX, minY, maxY;
+
+        switch (zone) {
+            case 0: // Top
+                minX = margin;
+                maxX = can.width - margin;
+                minY = margin;
+                maxY = (can.height - boardH) / 2 - pieceSize;
+                if (maxY < minY) maxY = minY + 10; // 安全策
+                break;
+            case 1: // Bottom
+                minX = margin;
+                maxX = can.width - margin;
+                minY = (can.height - boardH) / 2 + boardH + pieceSize;
+                maxY = can.height - margin;
+                if (minY > maxY) minY = maxY - 10;
+                break;
+            case 2: // Left
+                minX = margin;
+                maxX = (can.width - boardW) / 2 - pieceSize;
+                minY = margin;
+                maxY = can.height - margin;
+                if (maxX < minX) maxX = minX + 10;
+                break;
+            case 3: // Right
+                minX = (can.width - boardW) / 2 + boardW + pieceSize;
+                maxX = can.width - margin;
+                minY = margin;
+                maxY = can.height - margin;
+                if (minX > maxX) minX = maxX - 10;
+                break;
+        }
+
+        // ゾーン内に配置（キャンバスサイズが小さすぎてエリアがない場合はランダム）
+        if (minX > maxX || minY > maxY) {
+            // フォールバック: 画面全体
+            piece.X = Math.random() * (can.width - pieceSize);
+            piece.Y = Math.random() * (can.height - pieceSize);
+        } else {
+            piece.X = minX + Math.random() * (maxX - minX);
+            piece.Y = minY + Math.random() * (maxY - minY);
+        }
+
+        // 初期回転をランダムに
         piece.Rotation = Math.floor(Math.random() * 4);
-        piece.visualRotation = piece.Rotation; // 初期状態は即時反映
+        piece.visualRotation = piece.Rotation;
+
+        // 初期化
         piece.IsLocked = false;
         piece.scale = 1;
         piece.shadow = false;
         piece.group = [piece];
+
+        // World座標に合わせるためにViewの逆変換...は不要
+        // Piece.X/YはWorld座標系であるべき。
+        // しかしここではCanvas座標系(Screen)で計算してしまった。
+        // ViewはZoom/Panがあるので、Screen座標 -> World座標に変換してセットする必要がある。
+
+        // toWorld相当の処理
+        // worldX = (screenX - view.x) / view.scale
+        piece.X = (piece.X - view.x) / view.scale;
+        piece.Y = (piece.Y - view.y) / view.scale;
     });
 }
 

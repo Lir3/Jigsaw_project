@@ -96,6 +96,24 @@ window.addEventListener('mouseup', () => {
     isDraggingImg = false;
 });
 
+// 拡大縮小機能
+let imgScale = 1.0;
+previewImg.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const scaleSensitivity = 0.001;
+    const delta = -e.deltaY * scaleSensitivity;
+
+    imgScale += delta;
+    // 制限
+    if (imgScale < 0.1) imgScale = 0.1;
+    if (imgScale > 5.0) imgScale = 5.0;
+
+    // Apply transform
+    previewImg.style.transform = `scale(${imgScale})`;
+}, { passive: false });
+
 // 完成図のON/OFF切り替え
 const toggleBtn = document.getElementById('toggleCompletedBtn');
 const previewImgElement = document.getElementById('completedImagePreview');
