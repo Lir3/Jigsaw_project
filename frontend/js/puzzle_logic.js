@@ -549,91 +549,145 @@ window.addEventListener('dblclick', (ev) => {
 
 // --- シャッフル ---
 // --- シャッフル (初期分散) ---
+// --- シャッフル (初期分散: 枠外整列配置) ---
 function shuffleInitial() {
     if (!pieces || pieces.length === 0) return;
 
-    // パズルエリアの定義 (中央付近)
+    const margin = pieceSize * 0.5; // パディング
     const boardW = pieceSize * colMax;
     const boardH = pieceSize * rowMax;
-    const boardX = (can.width - boardW) / 2; // view.x, view.yに依存せずcanvas上の配置領域を計算
-    const boardY = (can.height - boardH) / 2;
 
-    // 4つのゾーン (Top, Bottom, Left, Right)
-    // 画面外にはみ出しすぎないようにマージンを持たせる
-    const margin = pieceSize * 1.5;
+    // Canvas上の配置エリア (中央)
+    // Board Rect (Screen Coords if View is Identity)
+    // We used (can.width - boardW)/2 for initial view centering logic but here we need 
+    // to place pieces relative to where the board *is* in world space (0,0 to boardW, boardH).
+    // The previous implementation placed them in Screen Coords then converted. 
+    // Let's stick to World Coords directly.
+    // Board is at (0, 0) to (boardW, boardH) in World Space.
 
-    // ゾーンの定義 (Canvas座標系)
-    // Top: y < boardY
-    // Bottom: y > boardY + boardH
-    // Left: x < boardX
-    // Right: x > boardX + boardW
+    // Total Pieces
+    const n = pieces.length;
 
-    pieces.forEach(piece => {
-        const zone = Math.floor(Math.random() * 4); // 0:Top, 1:Bottom, 2:Left, 3:Right
+    // Allocate pieces to 4 zones: Top, Bottom, Left, Right
+    // Top/Bottom: Wide areas. Left/Right: Tall areas.
+    // Let's distribute evenly or proportional to aspect.
+    // Simple approach: Equipartition.
+    const zones = [[], [], [], []]; // 0:Top, 1:Bottom, 2:Left, 3:Right
 
-        let minX, maxX, minY, maxY;
+    // Randomly shuffle pieces first to ensure random distribution into zones
+    // (So that adjacent pieces in solved state aren't necessarily next to each other in initial state)
+    const shuffledPieces = [...pieces].sort(() => Math.random() - 0.5);
 
-        switch (zone) {
-            case 0: // Top
-                minX = margin;
-                maxX = can.width - margin;
-                minY = margin;
-                maxY = (can.height - boardH) / 2 - pieceSize;
-                if (maxY < minY) maxY = minY + 10; // 安全策
-                break;
-            case 1: // Bottom
-                minX = margin;
-                maxX = can.width - margin;
-                minY = (can.height - boardH) / 2 + boardH + pieceSize;
-                maxY = can.height - margin;
-                if (minY > maxY) minY = maxY - 10;
-                break;
-            case 2: // Left
-                minX = margin;
-                maxX = (can.width - boardW) / 2 - pieceSize;
-                minY = margin;
-                maxY = can.height - margin;
-                if (maxX < minX) maxX = minX + 10;
-                break;
-            case 3: // Right
-                minX = (can.width - boardW) / 2 + boardW + pieceSize;
-                maxX = can.width - margin;
-                minY = margin;
-                maxY = can.height - margin;
-                if (minX > maxX) minX = maxX - 10;
-                break;
-        }
-
-        // ゾーン内に配置（キャンバスサイズが小さすぎてエリアがない場合はランダム）
-        if (minX > maxX || minY > maxY) {
-            // フォールバック: 画面全体
-            piece.X = Math.random() * (can.width - pieceSize);
-            piece.Y = Math.random() * (can.height - pieceSize);
-        } else {
-            piece.X = minX + Math.random() * (maxX - minX);
-            piece.Y = minY + Math.random() * (maxY - minY);
-        }
-
-        // 初期回転をランダムに
-        piece.Rotation = Math.floor(Math.random() * 4);
-        piece.visualRotation = piece.Rotation;
-
-        // 初期化
-        piece.IsLocked = false;
-        piece.scale = 1;
-        piece.shadow = false;
-        piece.group = [piece];
-
-        // World座標に合わせるためにViewの逆変換...は不要
-        // Piece.X/YはWorld座標系であるべき。
-        // しかしここではCanvas座標系(Screen)で計算してしまった。
-        // ViewはZoom/Panがあるので、Screen座標 -> World座標に変換してセットする必要がある。
-
-        // toWorld相当の処理
-        // worldX = (screenX - view.x) / view.scale
-        piece.X = (piece.X - view.x) / view.scale;
-        piece.Y = (piece.Y - view.y) / view.scale;
+    shuffledPieces.forEach((p, i) => {
+        zones[i % 4].push(p);
     });
+
+    // Helper to calculate grid capacity
+    // areaW: available width, pieceS: piece size
+    const layoutLine = (zonePieces, startX, startY, stepX, stepY, maxPerLine) => {
+        let currentX = startX;
+        let currentY = startY;
+        let lineCount = 0;
+
+        zonePieces.forEach(p => {
+            p.X = currentX;
+            p.Y = currentY;
+
+            // Randomly rotate
+            p.Rotation = Math.floor(Math.random() * 4);
+            p.visualRotation = p.Rotation;
+            p.IsLocked = false;
+            p.group = [p];
+
+            lineCount++;
+            if (lineCount >= maxPerLine) {
+                // Next Line
+                currentX = startX; // Reset Primary Axis (assumes simple row/col fill)
+                // Wait, if stepX is primary, we wrap Y?
+                // Let's make this simpler.
+            }
+        });
+    };
+
+    // --- Layout Logic ---
+    // Top Zone (Zone 0):
+    // Fill from Bottom-Up (closer to board -> farther)? Or Top-Down?
+    // User image shows tightly packed.
+    // Let's fill Left-to-Right, Bottom-to-Top (so row 0 is just above board).
+    {
+        const list = zones[0];
+        const cols = colMax + 4; // Slightly wider than board
+        const startX = -pieceSize * 2; // Start a bit to the left
+        const startY = -pieceSize * 1.5; // Just above board
+
+        list.forEach((p, i) => {
+            const c = i % cols;
+            const r = Math.floor(i / cols);
+            p.X = startX + c * pieceSize;
+            p.Y = startY - r * pieceSize; // Go Up
+            setupPiece(p);
+        });
+    }
+
+    // Bottom Zone (Zone 1):
+    // Fill Left-to-Right, Top-to-Bottom (starting just below board)
+    {
+        const list = zones[1];
+        const cols = colMax + 4;
+        const startX = -pieceSize * 2;
+        const startY = boardH + pieceSize * 0.5;
+
+        list.forEach((p, i) => {
+            const c = i % cols;
+            const r = Math.floor(i / cols);
+            p.X = startX + c * pieceSize;
+            p.Y = startY + r * pieceSize; // Go Down
+            setupPiece(p);
+        });
+    }
+
+    // Left Zone (Zone 2):
+    // Fill Top-to-Bottom, Right-to-Left (closer to board -> farther)
+    {
+        const list = zones[2];
+        const rows = rowMax + 4; // Slightly taller
+        const startX = -pieceSize * 1.5; // Just left of board
+        const startY = -pieceSize * 2; // Start a bit up
+
+        list.forEach((p, i) => {
+            const r = i % rows;
+            const c = Math.floor(i / rows);
+            p.X = startX - c * pieceSize; // Go Left
+            p.Y = startY + r * pieceSize;
+            setupPiece(p);
+        });
+    }
+
+    // Right Zone (Zone 3):
+    // Fill Top-to-Bottom, Left-to-Right (starting just right of board)
+    {
+        const list = zones[3];
+        const rows = rowMax + 4;
+        const startX = boardW + pieceSize * 0.5;
+        const startY = -pieceSize * 2;
+
+        list.forEach((p, i) => {
+            const r = i % rows;
+            const c = Math.floor(i / rows);
+            p.X = startX + c * pieceSize; // Go Right
+            p.Y = startY + r * pieceSize;
+            setupPiece(p);
+        });
+    }
+}
+
+function setupPiece(p) {
+    p.Rotation = Math.floor(Math.random() * 4);
+    p.visualRotation = p.Rotation;
+    p.IsLocked = false;
+    p.scale = 1;
+    p.shadow = false;
+    p.group = [p];
 }
 
 // --- 描画 ---
