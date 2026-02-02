@@ -333,41 +333,44 @@ async function initPuzzle(imageUrl, savedPiecesData, difficultyArg) {
     // ここでは簡易的に、resetBtnがcloneNodeでリセットされていない限り重複する可能性があるが、
     // 実用上は画面リロード前提なので許容、あるいは single_play.js 側で制御
     // ★前回の修正で single_play.js 側でもリスナーをつけているので注意
-
-    if (resetBtn) {
-        // 古いリスナー削除は難しいので、リセットボタン自体の再生成（クローン）によるリスナー削除テクニックを使う手もあるが、
-        // 今回は単純に追加しておく。
-        resetBtn.onclick = () => { // onclickプロパティなら上書きされるので安全
+    resetBtn.onclick = () => { // onclickプロパティなら上書きされるので安全
+        if (confirm("パズルをリセットしますか？")) {
             time = 0;
             isGameCompleted = false;
             shuffleInitial();
             drawAll();
             startTimer();
-        };
-    }
-
-    // ヒントボタン
-    const hintBtn = document.getElementById('hintBtn');
-    if (hintBtn) hintBtn.onclick = () => {
-        const remaining = pieces.filter(p => !p.Check());
-        if (remaining.length === 0) return;
-        const hintPiece = remaining[Math.floor(Math.random() * remaining.length)];
-        const oldX = hintPiece.X;
-        const oldY = hintPiece.Y;
-        hintPiece.X = hintPiece.OriginalCol * pieceSize;
-        hintPiece.Y = hintPiece.OriginalRow * pieceSize;
-        drawAll();
-        setTimeout(() => {
-            hintPiece.X = oldX;
-            hintPiece.Y = oldY;
-            drawAll();
-        }, 1000);
+        }
     };
+}
 
+// テーマ初期化
+if (localStorage.getItem('theme') === 'light') {
+    document.body.classList.add('light-mode');
+}
+
+// ヒントボタン
+const hintBtn = document.getElementById('hintBtn');
+if (hintBtn) hintBtn.onclick = () => {
+    const remaining = pieces.filter(p => !p.Check());
+    if (remaining.length === 0) return;
+    const hintPiece = remaining[Math.floor(Math.random() * remaining.length)];
+    const oldX = hintPiece.X;
+    const oldY = hintPiece.Y;
+    hintPiece.X = hintPiece.OriginalCol * pieceSize;
+    hintPiece.Y = hintPiece.OriginalRow * pieceSize;
     drawAll();
+    setTimeout(() => {
+        hintPiece.X = oldX;
+        hintPiece.Y = oldY;
+        drawAll();
+    }, 1000);
+};
 
-    // Initial Count
-    if (typeof updatePieceCount === 'function') updatePieceCount();
+drawAll();
+
+// Initial Count
+if (typeof updatePieceCount === 'function') updatePieceCount();
 
     // Timer Start (if not multiplayer controlled)
     // ...
@@ -643,11 +646,18 @@ function drawAll() {
     const boardH = pieceSize * rowMax;
 
     // パズルエリアの背景
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+    if (document.body.classList.contains('light-mode')) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+    } else {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    }
+
     ctx.fillRect(0, 0, boardW, boardH);
 
     // 枠線
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    // strokeStyle set above
     ctx.lineWidth = 2 / view.scale;
     ctx.strokeRect(0, 0, boardW, boardH);
 

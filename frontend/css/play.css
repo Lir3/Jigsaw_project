@@ -16,6 +16,70 @@ body {
     width: 100vw;
 }
 
+/* --- Light Mode --- */
+body.light-mode {
+    background-color: #f8fafc;
+    /* Slate 50 */
+    color: #1e293b;
+    /* Slate 800 */
+}
+
+body.light-mode #canvas-container {
+    background-color: #f8fafc;
+}
+
+body.light-mode .header-controls {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+body.light-mode .toolbar-btn {
+    color: #64748b;
+    /* Slate 500 */
+}
+
+body.light-mode .toolbar-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #334155;
+    /* Slate 700 */
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Chat tweaks for light mode */
+body.light-mode .chat-container {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    color: #1e293b;
+}
+
+body.light-mode .chat-header {
+    background: #f1f5f9 !important;
+    /* Slate 100 */
+    color: #334155 !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body.light-mode .chat-message {
+    background: rgba(0, 0, 0, 0.03) !important;
+    color: #334155;
+}
+
+body.light-mode .chat-message.own {
+    background: rgba(59, 130, 246, 0.1) !important;
+}
+
+body.light-mode .chat-input-area {
+    background: rgba(255, 255, 255, 0.8) !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+body.light-mode #chat-input {
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    color: #334155;
+}
+
 /* --- Canvas Area --- */
 #canvas-container {
     position: absolute;
