@@ -69,6 +69,11 @@ body {
     margin: 5px 0 10px;
     font-size: 1.1rem;
     color: #444;
+
+    /* 文字が長い場合は省略記号を表示 */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .card-info {
