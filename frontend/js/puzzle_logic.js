@@ -27,14 +27,17 @@ function toWorld(screenX, screenY) {
     };
 }
 
+// ★ ReferenceError Fix: Move these to top scope
+let movingPiece = null;
+let oldX = 0, oldY = 0;
+
 // DB連携 (single_play.js) からアクセスされるグローバル変数
 let timer = null;
-let time = 0; // 経過時間
+window.time = 0; // 経過時間 (Global for sync)
 let isGameCompleted = false; // クリアフラグ
 const $time = document.getElementById('time'); // HTML要素
 const $status = document.getElementById('status-msg'); // HTML要素 (single_play.jsで使用)
 
-// ★ ReferenceError Fix: Move these to top scope
 let movingPiece = null;
 let oldX = 0, oldY = 0;
 
@@ -175,11 +178,11 @@ class Piece {
 // タイマー開始関数
 function startTimer() {
     if (timer) clearInterval(timer);
-    $time.innerHTML = `${time}`;
+    $time.innerHTML = `${window.time}`;
     $time.style.color = ''; // CSSに任せる
     timer = setInterval(() => {
-        time++;
-        $time.innerHTML = `${time}`;
+        window.time++;
+        $time.innerHTML = `${window.time}`;
     }, 1000);
 }
 
@@ -339,7 +342,7 @@ async function initPuzzle(imageUrl, savedPiecesData, difficultyArg) {
     // ★前回の修正で single_play.js 側でもリスナーをつけているので注意
     resetBtn.onclick = () => { // onclickプロパティなら上書きされるので安全
         if (confirm("パズルをリセットしますか？")) {
-            time = 0;
+            window.time = 0;
             isGameCompleted = false;
             shuffleInitial();
             drawAll();
@@ -875,6 +878,26 @@ window.addEventListener('mousedown', (ev) => {
             // --- ピースを掴む ---
             movingPiece = clickedPiece;
             mouseStartX = wRef.x; // World座標で保存
+            stopTimer(); // タイマーストップ
+
+            // Completion Logic
+            // Call specific completion handlers if available (e.g., multiplayer)
+            if (typeof showCompletionUI === 'function') {
+                showCompletionUI(window.time); // Pass global time
+            } else {
+                // Default Single Player Modal
+                const modal = document.getElementById('completionModal');
+                const modalTime = document.getElementById('modalTime');
+                if (modal && modalTime) {
+                    modalTime.textContent = window.time + "秒";
+                    modal.style.display = 'flex';
+                }
+            }
+
+            // DB Save (Single Only)
+            if (!window.location.pathname.includes('multi')) {
+                // ... save logic
+            }
             mouseStartY = wRef.y;
 
             // グループ全体をドラッグ開始状態にする

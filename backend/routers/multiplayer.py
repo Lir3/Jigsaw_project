@@ -2,6 +2,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
 from typing import List, Dict, Any
 import json
 import asyncio
+from database import supabase
 
 router = APIRouter()
 
@@ -76,6 +77,16 @@ class GameStateManager:
         # ホストIDは初回のみ設定（既に設定されていれば上書きしない）
         if host_user_id and room_id not in self.room_hosts:
             self.room_hosts[room_id] = host_user_id
+
+        # DBから難易度を取得して設定
+        if room_id not in self.room_difficulties:
+            try:
+                res = supabase.table("rooms").select("difficulty").eq("id", room_id).execute()
+                if res.data and len(res.data) > 0:
+                    self.room_difficulties[room_id] = res.data[0]["difficulty"]
+            except Exception as e:
+                print(f"Error fetching room difficulty: {e}")
+                self.room_difficulties[room_id] = "normal" # Default
 
     def set_image(self, room_id: str, image_url: str):
         self.room_images[room_id] = image_url
