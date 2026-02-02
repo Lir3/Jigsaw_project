@@ -372,9 +372,8 @@ drawAll();
 // Initial Count
 if (typeof updatePieceCount === 'function') updatePieceCount();
 
-    // Timer Start (if not multiplayer controlled)
-    // ...
-};
+// Timer Start (if not multiplayer controlled)
+// ...
 
 // 画像読み込み関数
 async function createSourceImage(url) {
