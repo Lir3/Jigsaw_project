@@ -610,6 +610,9 @@ function shuffleInitial() {
     };
 
     // --- Layout Logic ---
+    // Step size for spacing (1.2x pieceSize for breathing room)
+    const step = pieceSize * 1.2;
+
     // Top Zone (Zone 0):
     // Fill from Bottom-Up (closer to board -> farther)? Or Top-Down?
     // User image shows tightly packed.
@@ -623,8 +626,8 @@ function shuffleInitial() {
         list.forEach((p, i) => {
             const c = i % cols;
             const r = Math.floor(i / cols);
-            p.X = startX + c * pieceSize;
-            p.Y = startY - r * pieceSize; // Go Up
+            p.X = startX + c * step; // Use step
+            p.Y = startY - r * step; // Use step
             setupPiece(p);
         });
     }
@@ -640,8 +643,8 @@ function shuffleInitial() {
         list.forEach((p, i) => {
             const c = i % cols;
             const r = Math.floor(i / cols);
-            p.X = startX + c * pieceSize;
-            p.Y = startY + r * pieceSize; // Go Down
+            p.X = startX + c * step;
+            p.Y = startY + r * step;
             setupPiece(p);
         });
     }
@@ -657,8 +660,8 @@ function shuffleInitial() {
         list.forEach((p, i) => {
             const r = i % rows;
             const c = Math.floor(i / rows);
-            p.X = startX - c * pieceSize; // Go Left
-            p.Y = startY + r * pieceSize;
+            p.X = startX - c * step; // Go Left
+            p.Y = startY + r * step;
             setupPiece(p);
         });
     }
@@ -674,8 +677,8 @@ function shuffleInitial() {
         list.forEach((p, i) => {
             const r = i % rows;
             const c = Math.floor(i / rows);
-            p.X = startX + c * pieceSize; // Go Right
-            p.Y = startY + r * pieceSize;
+            p.X = startX + c * step; // Go Right
+            p.Y = startY + r * step;
             setupPiece(p);
         });
     }
