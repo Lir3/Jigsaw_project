@@ -34,6 +34,10 @@ let isGameCompleted = false; // クリアフラグ
 const $time = document.getElementById('time'); // HTML要素
 const $status = document.getElementById('status-msg'); // HTML要素 (single_play.jsで使用)
 
+// ★ ReferenceError Fix: Move these to top scope
+let movingPiece = null;
+let oldX = 0, oldY = 0;
+
 // 外部からのズーム操作用
 function zoomIn() {
     view.scale = Math.min(view.scale * 1.2, 5.0);
@@ -345,6 +349,20 @@ async function initPuzzle(imageUrl, savedPiecesData, difficultyArg) {
 }
 
 // テーマ初期化
+// function toggleTheme moved to global scope or window assignment needed?
+// It is defined in global scope here, but explicit assignment helps if script is module or strict mode quirks.
+window.toggleTheme = function () {
+    document.body.classList.toggle('light-mode');
+    const isLight = document.body.classList.contains('light-mode');
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    drawAll(); // 再描画して背景色更新
+};
+
+// Also expose zoom functions if needed, though they are likely picked up.
+window.zoomIn = zoomIn;
+window.zoomOut = zoomOut;
+
+// Ensure shuffleInitial and rotateGroup are verified.
 if (localStorage.getItem('theme') === 'light') {
     document.body.classList.add('light-mode');
 }
@@ -619,8 +637,7 @@ function shuffleInitial() {
 }
 
 // --- 描画 ---
-let movingPiece = null;
-let oldX = 0, oldY = 0;
+// movingPiece, oldX, oldY moved to top
 
 function resizeCanvas() {
     if (can) {
