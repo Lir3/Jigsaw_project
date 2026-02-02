@@ -351,6 +351,17 @@ async function initPuzzle(imageUrl, savedPiecesData, difficultyArg) {
 // テーマ初期化
 // function toggleTheme moved to global scope or window assignment needed?
 // It is defined in global scope here, but explicit assignment helps if script is module or strict mode quirks.
+window.toggleHelp = function () {
+    const modal = document.getElementById('helpModal');
+    if (modal) {
+        if (modal.style.display === 'flex') {
+            modal.style.display = 'none';
+        } else {
+            modal.style.display = 'flex';
+        }
+    }
+};
+
 window.toggleTheme = function () {
     document.body.classList.toggle('light-mode');
     const isLight = document.body.classList.contains('light-mode');
@@ -610,8 +621,8 @@ function shuffleInitial() {
     };
 
     // --- Layout Logic ---
-    // Step size for spacing (1.2x pieceSize for breathing room)
-    const step = pieceSize * 1.2;
+    // Step size for spacing (1.6x pieceSize for better visibility)
+    const step = pieceSize * 1.6;
 
     // Top Zone (Zone 0):
     // Fill from Bottom-Up (closer to board -> farther)? Or Top-Down?
