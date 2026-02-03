@@ -35,8 +35,8 @@ let oldX = 0, oldY = 0;
 let timer = null;
 window.time = 0; // 経過時間 (Global for sync)
 let isGameCompleted = false; // クリアフラグ
-const $time = document.getElementById('time'); // HTML要素
-const $status = document.getElementById('status-msg'); // HTML要素 (single_play.jsで使用)
+window.$time = document.getElementById('time'); // HTML要素
+window.$status = document.getElementById('status-msg'); // HTML要素 (single_play.jsで使用)
 
 
 
@@ -877,26 +877,6 @@ window.addEventListener('mousedown', (ev) => {
             // --- ピースを掴む ---
             movingPiece = clickedPiece;
             mouseStartX = wRef.x; // World座標で保存
-            stopTimer(); // タイマーストップ
-
-            // Completion Logic
-            // Call specific completion handlers if available (e.g., multiplayer)
-            if (typeof showCompletionUI === 'function') {
-                showCompletionUI(window.time); // Pass global time
-            } else {
-                // Default Single Player Modal
-                const modal = document.getElementById('completionModal');
-                const modalTime = document.getElementById('modalTime');
-                if (modal && modalTime) {
-                    modalTime.textContent = window.time + "秒";
-                    modal.style.display = 'flex';
-                }
-            }
-
-            // DB Save (Single Only)
-            if (!window.location.pathname.includes('multi')) {
-                // ... save logic
-            }
             mouseStartY = wRef.y;
 
             // グループ全体をドラッグ開始状態にする
@@ -1066,14 +1046,17 @@ function check() {
         }
 
         // Show UI
+        // Show UI
         if (typeof showCompletionUI === 'function') {
-            // In Single Play, 'time' is seconds (number)
-            // In Multi Play, 'time' is string (sometimes) or synced number?
-            // Actually currently 'time' var is number in single logic.
-            // Formatting to time string if needed?
-            // UI expects string possibly "123" or "2:03".
-            // Let's format it nicely if it's a number.
-            showCompletionUI(formatTime(time));
+            showCompletionUI(formatTime(window.time));
+        } else {
+            // Default Single Player Modal
+            const modal = document.getElementById('completionModal');
+            const modalTime = document.getElementById('modalTime');
+            if (modal && modalTime) {
+                modalTime.textContent = formatTime(window.time); // Use formatTime
+                modal.style.display = 'flex';
+            }
         }
     }
 }

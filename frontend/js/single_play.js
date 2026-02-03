@@ -105,8 +105,8 @@ async function handleResetForCompletedSession() {
 // 元のloadGameDataの中身を分離して再利用しやすくする
 async function originalLoadGameDataBase(data) {
     const session = data.session;
-    time = session.elapsed_time || 0;
-    if ($time) $time.innerHTML = `${time} `;
+    window.time = session.elapsed_time || 0;
+    if (window.$time) window.$time.innerHTML = `${window.time} `;
 
     // 画像URL取得
     // ※ backendのload_session実装によるが、puzzle_mastersが結合されている前提
