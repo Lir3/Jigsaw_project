@@ -38,8 +38,7 @@ let isGameCompleted = false; // クリアフラグ
 const $time = document.getElementById('time'); // HTML要素
 const $status = document.getElementById('status-msg'); // HTML要素 (single_play.jsで使用)
 
-let movingPiece = null;
-let oldX = 0, oldY = 0;
+
 
 // 外部からのズーム操作用
 function zoomIn() {
