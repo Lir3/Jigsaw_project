@@ -334,20 +334,17 @@ async function initPuzzle(imageUrl, savedPiecesData, difficultyArg) {
 
     // リセットボタン
     const resetBtn = document.getElementById('resetBtn');
-    // 既存のリスナー重複を防ぐため、単純な追加でなく制御が必要だが、
-    // 無名関数で追加しているので削除困難。
-    // ここでは簡易的に、resetBtnがcloneNodeでリセットされていない限り重複する可能性があるが、
-    // 実用上は画面リロード前提なので許容、あるいは single_play.js 側で制御
-    // ★前回の修正で single_play.js 側でもリスナーをつけているので注意
-    resetBtn.onclick = () => { // onclickプロパティなら上書きされるので安全
-        if (confirm("パズルをリセットしますか？")) {
-            window.time = 0;
-            isGameCompleted = false;
-            shuffleInitial();
-            drawAll();
-            startTimer();
-        }
-    };
+    if (resetBtn) {
+        resetBtn.onclick = () => { // onclickプロパティなら上書きされるので安全
+            if (confirm("パズルをリセットしますか？")) {
+                window.time = 0;
+                isGameCompleted = false;
+                shuffleInitial();
+                drawAll();
+                startTimer();
+            }
+        };
+    }
 }
 
 // テーマ初期化

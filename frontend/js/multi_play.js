@@ -446,10 +446,9 @@ function startSyncedTimer() {
         const elapsedSeconds = currentTime - gameStartTime;
 
         // ★ global variable 'time' in puzzle_logic.js should be updated
-        // assuming 'time' is accessible globally or locally via module scope sharing
-        try {
-            time = elapsedSeconds;
-        } catch (e) { /* ignore ref error */ }
+        if (typeof window.time !== 'undefined') {
+            window.time = elapsedSeconds;
+        }
 
         if (timeDisplay) {
             timeDisplay.innerHTML = `${elapsedSeconds}`;
