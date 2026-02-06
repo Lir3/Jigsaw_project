@@ -228,7 +228,7 @@ async function saveGame() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 user_id: userId,
-                elapsed_time: time,
+                elapsed_time: window.time,
                 is_completed: isGameCompleted,
                 pieces: piecesData
             })

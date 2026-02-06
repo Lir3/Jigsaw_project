@@ -136,34 +136,38 @@ def save_session(session_id: str, req: SaveSessionRequest):
 
     # 3. ベストタイム更新 (クリア時のみ)
     if req.is_completed:
-        # セッションからパズルIDと難易度を取得
-        current_session = supabase.table("single_sessions").select("puzzle_id, difficulty").eq("id", session_id).single().execute()
-        if current_session.data:
-            p_id = current_session.data['puzzle_id']
-            diff = current_session.data['difficulty'] or 'normal'
-            
-            # 現在のベストを取得
-            current_best_rec = supabase.table("user_best_records")\
-                .select("elapsed_time")\
-                .eq("user_id", req.user_id)\
-                .eq("puzzle_id", p_id)\
-                .eq("difficulty", diff)\
-                .single().execute()
-            
-            should_update = False
-            if not current_best_rec.data:
-                should_update = True # レコードなし
-            elif req.elapsed_time < current_best_rec.data['elapsed_time']:
-                should_update = True # 新記録
-            
-            if should_update:
-                supabase.table("user_best_records").upsert({
-                    "user_id": req.user_id,
-                    "puzzle_id": p_id,
-                    "difficulty": diff,
-                    "elapsed_time": req.elapsed_time,
-                    "updated_at": "now()"
-                }).execute()
+        try:
+            # セッションからパズルIDと難易度を取得
+            current_session_res = supabase.table("single_sessions").select("puzzle_id, difficulty").eq("id", session_id).execute()
+            if current_session_res.data and len(current_session_res.data) > 0:
+                p_id = current_session_res.data[0]['puzzle_id']
+                diff = current_session_res.data[0]['difficulty'] or 'normal'
+                
+                # 現在のベストを取得
+                current_best_rec = supabase.table("user_best_records")\
+                    .select("elapsed_time")\
+                    .eq("user_id", req.user_id)\
+                    .eq("puzzle_id", p_id)\
+                    .eq("difficulty", diff)\
+                    .execute()
+                
+                should_update = False
+                if not current_best_rec.data or len(current_best_rec.data) == 0:
+                    should_update = True # レコードなし
+                elif req.elapsed_time < current_best_rec.data[0]['elapsed_time']:
+                    should_update = True # 新記録
+                
+                if should_update:
+                    supabase.table("user_best_records").upsert({
+                        "user_id": req.user_id,
+                        "puzzle_id": p_id,
+                        "difficulty": diff,
+                        "elapsed_time": req.elapsed_time,
+                        "updated_at": "now()"
+                    }).execute()
+        except Exception as e:
+            print(f"Error updating best time: {e}")
+            # ベストタイム更新失敗でもセーブ自体は成功とみなす（UX優先）
 
     return {"status": "saved"}
 
