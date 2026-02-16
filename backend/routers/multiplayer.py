@@ -118,7 +118,8 @@ class GameStateManager:
                 "index": idx,
                 "x": p["x"],
                 "y": p["y"],
-                "rotation": p["rotation"]
+                "rotation": p["rotation"],
+                "group": p["group"] # グループ情報も送信
             })
         return pieces_list
 

@@ -180,25 +180,50 @@ window.onPieceGrab = (piece) => {
 
 window.onPieceMove = (piece) => {
     // ※頻度制御（Throttle）が必要だが、一旦そのまま送る（ローカルでは即時反映済み）
-    // 位置情報を送信
-    ws.send(JSON.stringify({
-        type: "MOVE",
-        index: piece.originalIndex,
-        x: piece.X,
-        y: piece.Y,
-        rotation: piece.Rotation
-    }));
+    // 位置情報を送信 (グループ全員分)
+    if (piece.group && piece.group.length > 0) {
+        piece.group.forEach(p => {
+            ws.send(JSON.stringify({
+                type: "MOVE",
+                index: p.originalIndex,
+                x: p.X,
+                y: p.Y,
+                rotation: p.Rotation
+            }));
+        });
+    } else {
+        ws.send(JSON.stringify({
+            type: "MOVE",
+            index: piece.originalIndex,
+            x: piece.X,
+            y: piece.Y,
+            rotation: piece.Rotation
+        }));
+    }
 };
 
 window.onPieceDrop = (piece) => {
     // リリース通知（最終位置含む）
-    ws.send(JSON.stringify({
-        type: "RELEASE",
-        index: piece.originalIndex,
-        x: piece.X,
-        y: piece.Y,
-        rotation: piece.Rotation
-    }));
+    // グループ全員分送る
+    if (piece.group && piece.group.length > 0) {
+        piece.group.forEach(p => {
+            ws.send(JSON.stringify({
+                type: "RELEASE",
+                index: p.originalIndex,
+                x: p.X,
+                y: p.Y,
+                rotation: p.Rotation
+            }));
+        });
+    } else {
+        ws.send(JSON.stringify({
+            type: "RELEASE",
+            index: piece.originalIndex,
+            x: piece.X,
+            y: piece.Y,
+            rotation: piece.Rotation
+        }));
+    }
 };
 
 window.onPieceRotate = (piece) => {
@@ -418,8 +443,22 @@ async function startMultiplayerGame(initialPiecesData, serverStartTime) {
             p.Y = pData.y;
             p.Rotation = pData.rotation;
             p.visualRotation = pData.rotation;
-            // グループ解除 (初期はバラバラ)
-            p.group = [p];
+            // グループ情報は後でリンクするが、一旦サーバーからの情報を保持しておく
+            p._serverGroup = pData.group;
+        }
+    });
+
+    // グループの再構築
+    initialPiecesData.forEach(pData => {
+        const p = pieces.find(item => item.originalIndex === pData.index);
+        if (p && p._serverGroup) {
+            // p._serverGroup は [index1, index2, ...] の配列
+            const groupPieces = p._serverGroup.map(idx => pieces.find(x => x.originalIndex === idx)).filter(Boolean);
+            if (groupPieces.length > 0) {
+                p.group = groupPieces;
+            } else {
+                p.group = [p];
+            }
         }
     });
 
