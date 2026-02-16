@@ -81,6 +81,9 @@ function useHint() {
     // Effect? Maybe flash it (TODO)
     drawAll();
     check();
+
+    // ★Hook: Hint Used (for Multiplayer sync)
+    if (typeof window.onHintUsed === 'function') window.onHintUsed(p);
 }
 
 // ヒントボタンのイベントリスナー設定 (Called from play.html/multi_play.html)

@@ -261,6 +261,31 @@ window.onPieceMerge = (dragged, stationary) => {
     }));
 };
 
+window.onHintUsed = (piece) => {
+    // ヒント使用時も同期（グループ全員分送る）
+    if (piece.group && piece.group.length > 0) {
+        piece.group.forEach(p => {
+            ws.send(JSON.stringify({
+                type: "RELEASE",
+                index: p.originalIndex,
+                x: p.X,
+                y: p.Y,
+                rotation: p.Rotation,
+                is_locked: true // ヒントは常にロック
+            }));
+        });
+    } else {
+        ws.send(JSON.stringify({
+            type: "RELEASE",
+            index: piece.originalIndex,
+            x: piece.X,
+            y: piece.Y,
+            rotation: piece.Rotation,
+            is_locked: true
+        }));
+    }
+};
+
 
 // --- Remote Handling ---
 
