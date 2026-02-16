@@ -409,9 +409,9 @@ function handleRemoteUnlock(msg) {
 
         drawAll();
 
-        // ★ ピース数更新
-        if (typeof updatePieceCount === 'function') {
-            updatePieceCount();
+        // ★ 完成チェック (ピース数更新含む)
+        if (typeof check === 'function') {
+            check();
         }
     }
 }
@@ -436,9 +436,9 @@ function handleRemoteMerge(msg) {
         if (typeof mergeGroups === 'function') {
             mergeGroups(p1, p2);
             drawAll();
-            // ★ ピース数更新
-            if (typeof updatePieceCount === 'function') {
-                updatePieceCount();
+            // ★ 完成チェック
+            if (typeof check === 'function') {
+                check();
             }
         }
     }
@@ -516,6 +516,11 @@ async function startMultiplayerGame(initialPiecesData, serverStartTime) {
     }
 
     drawAll();
+
+    // 初期状態での完成チェック（途中参加で既にクリア済みの場合など）
+    if (typeof check === 'function') {
+        check();
+    }
 }
 
 function startSyncedTimer() {
