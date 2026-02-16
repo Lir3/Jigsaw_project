@@ -212,7 +212,8 @@ window.onPieceDrop = (piece) => {
                 index: p.originalIndex,
                 x: p.X,
                 y: p.Y,
-                rotation: p.Rotation
+                rotation: p.Rotation,
+                is_locked: p.IsLocked // ロック状態を送信
             }));
         });
     } else {
@@ -221,7 +222,8 @@ window.onPieceDrop = (piece) => {
             index: piece.originalIndex,
             x: piece.X,
             y: piece.Y,
-            rotation: piece.Rotation
+            rotation: piece.Rotation,
+            is_locked: piece.IsLocked // ロック状態を送信
         }));
     }
 };
@@ -362,14 +364,21 @@ function handleRemoteUnlock(msg) {
         p.Rotation = msg.rotation;
 
         // ★ 吸着チェック (相手がスナップさせた場合、座標が正しいはずなのでここでローカルもスナップさせる)
-        // ただし、無条件に吸着させると「適当に離した」場合も吸着してしまうので、距離判定を行う
-        if (typeof snapGroupToBoard === 'function') {
-            const snapDist = (typeof pieceSize !== 'undefined' ? pieceSize : 80) / 3;
-            const distToGoalX = Math.abs(p.X - p.OriginalCol * (typeof pieceSize !== 'undefined' ? pieceSize : 80));
-            const distToGoalY = Math.abs(p.Y - p.OriginalRow * (typeof pieceSize !== 'undefined' ? pieceSize : 80));
-
-            if (distToGoalX < snapDist && distToGoalY < snapDist) {
+        // is_locked が送られてきている場合は強制スナップ
+        if (msg.is_locked) {
+            if (typeof snapGroupToBoard === 'function') {
                 snapGroupToBoard(p);
+            }
+        } else {
+            // 従来の距離判定 (互換性のため残す)
+            if (typeof snapGroupToBoard === 'function') {
+                const snapDist = (typeof pieceSize !== 'undefined' ? pieceSize : 80) / 3;
+                const distToGoalX = Math.abs(p.X - p.OriginalCol * (typeof pieceSize !== 'undefined' ? pieceSize : 80));
+                const distToGoalY = Math.abs(p.Y - p.OriginalRow * (typeof pieceSize !== 'undefined' ? pieceSize : 80));
+
+                if (distToGoalX < snapDist && distToGoalY < snapDist) {
+                    snapGroupToBoard(p);
+                }
             }
         }
 
@@ -445,6 +454,15 @@ async function startMultiplayerGame(initialPiecesData, serverStartTime) {
             p.visualRotation = pData.rotation;
             // グループ情報は後でリンクするが、一旦サーバーからの情報を保持しておく
             p._serverGroup = pData.group;
+
+            // ロック状態（盤面吸着）の適用
+            if (pData.is_locked) {
+                p.IsLocked = true;
+                // 位置を強制的にグリッドに合わせる（サーバーが正しいはずだが念のため）
+                // サーバーの座標を信頼するならそのまま
+            } else {
+                p.IsLocked = false;
+            }
         }
     });
 

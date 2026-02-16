@@ -119,7 +119,8 @@ class GameStateManager:
                 "x": p["x"],
                 "y": p["y"],
                 "rotation": p["rotation"],
-                "group": p["group"] # グループ情報も送信
+                "group": p["group"], # グループ情報も送信
+                "is_locked": p.get("is_locked", False) # ロック状態
             })
         return pieces_list
 
@@ -361,9 +362,15 @@ async def puzzle_websocket(websocket: WebSocket, room_id: str, user_id: str):
                 x = payload.get("x")
                 y = payload.get("y")
                 rotation = payload.get("rotation")
+                is_locked = payload.get("is_locked", False)
                 
                 # 最終位置更新してからアンロック
                 game_state.update_piece(room_id, idx, x, y, rotation, user_id)
+                # is_lockedを保存
+                state = game_state.game_states.get(room_id, {})
+                if state and idx in state:
+                    state[idx]["is_locked"] = is_locked
+
                 game_state.unlock_piece(room_id, idx, user_id)
                 
                 await manager.broadcast(room_id, {
@@ -371,7 +378,8 @@ async def puzzle_websocket(websocket: WebSocket, room_id: str, user_id: str):
                     "index": idx,
                     "x": x,
                     "y": y,
-                    "rotation": rotation
+                    "rotation": rotation,
+                    "is_locked": is_locked
                 })
 
             elif msg_type == "MERGE":
